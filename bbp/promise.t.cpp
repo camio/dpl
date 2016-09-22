@@ -6,6 +6,10 @@ TEST(bbp_promise, basic) {
   bbp::promise<int> p([](auto fulfill, auto reject) { fulfill(3); });
 }
 
+TEST(bbp_promise, empty_promise) {
+  bbp::promise<> p([](auto fulfill, auto reject) { fulfill(); });
+}
+
 TEST(bbp_promise, then_two_arg) {
   //  Note the error message here. Concepts doesn't help.
   //  bbp::promise<int> q([](auto fulfill, auto reject) { fulfill("33"); });

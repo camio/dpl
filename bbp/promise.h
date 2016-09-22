@@ -1,27 +1,26 @@
 #include <bbp/variant.h>
 #include <exception>   // std::exception_ptr
 #include <type_traits> // std::is_same, std::result_of
+#include <tuple> // std::invoke, std::tuple
 #include <vector>
+
+#include <experimental/tuple> // std::experimental::apply
 
 namespace bbp {
 
 // Note that this is an abridged implementation of the like named 'Callable'
 // concept in the Range's TS.
-template <typename F, typename Type>
-concept bool Callable = requires(F f, Type t) {
-  f(t);
+template <typename F, typename... Types>
+concept bool Callable = requires(F f, Types... t) {
+  f(t...);
 };
 
-template <typename Type> class callable_placeholder {
-  void operator()(Type) const {}
+template <typename... Types> class callable_placeholder {
+  void operator()(Types...) const {}
 };
 
-class reject_placeholder {
-  void operator()(std::exception_ptr);
-};
-
-template <typename F, typename Type>
-concept bool Resolver = requires(F f, Type t) {
+template <typename F, typename... Types>
+concept bool Resolver = requires(F f, Types... t) {
   // Cannot use a lambda as in the following snippet because it would be in
   // an unevaluated context.
   //   resolver([](Type){}, [](std::exception_ptr){});
@@ -29,22 +28,23 @@ concept bool Resolver = requires(F f, Type t) {
   //
   // TODO: `callable_placeholder` is not sufficient. We also need to "verify"
   // that function pointers and other invokables work.
-  f(callable_placeholder<Type>(), callable_placeholder<std::exception_ptr>());
+
+  f(callable_placeholder<Types...>(), callable_placeholder<std::exception_ptr>());
 };
 
-template <typename Type> class promise {
+template <typename... Types> class promise {
 
   static const std::size_t waiting_state = 0;
   static const std::size_t fulfilled_state = 1;
   static const std::size_t rejected_state = 2;
 
   struct data {
-    bbp::variant<bbp::monostate, Type, std::exception_ptr> d_state;
+    bbp::variant<bbp::monostate, std::tuple<Types...>, std::exception_ptr> d_state;
 
     // TODO: Is this the best type for this vector to have, or is there
     // something better? Each function might get its own allocation
     // unfortunately.
-    std::vector<std::pair<std::function<void(Type)>,
+    std::vector<std::pair<std::function<void(Types...)>,
                           std::function<void(std::exception_ptr)>>>
         d_childFutures;
   };
@@ -54,16 +54,16 @@ template <typename Type> class promise {
   std::shared_ptr<data> d_data;
 
 public:
-  using type = Type;
+  using types = std::tuple<Types...>;
 
-  promise(Resolver<Type> resolver) : d_data(std::make_shared<data>()) {
+  promise(Resolver<Types...> resolver) : d_data(std::make_shared<data>()) {
     resolver(
-        [d_data = this->d_data](Type t) noexcept {
+        [d_data = this->d_data](Types... t) noexcept {
           // TODO: think about how I can move t into the state and then use it
           // for the child future notifications.
-          d_data->d_state.template emplace<fulfilled_state>(t);
+          d_data->d_state.template emplace<fulfilled_state>(t...);
           for (auto &&pf : d_data->d_childFutures)
-            pf.first(t);
+            pf.first(t...);
         },
         [d_data = this->d_data](std::exception_ptr e) noexcept {
           d_data->d_state.template emplace<rejected_state>(e);
@@ -71,25 +71,25 @@ public:
             pf.second(e);
         });
   }
-  template <Callable<Type> ValueContinuation,
+  template <Callable<Types...> ValueContinuation,
             Callable<std::exception_ptr> ErrorContinuation>
   // TODO: seems like this should be cleaner.
-  requires std::is_same<typename std::result_of<ValueContinuation(Type)>::type,
+  requires std::is_same<typename std::result_of<ValueContinuation(Types...)>::type,
                         typename std::result_of<
                             ErrorContinuation(std::exception_ptr)>::type>::value
-      promise<typename std::result_of<ValueContinuation(Type)>::type>
+      promise<typename std::result_of<ValueContinuation(Types...)>::type>
       then(ValueContinuation f, ErrorContinuation ef) {
 
-    typedef typename std::result_of<ValueContinuation(Type)>::type U;
+    typedef typename std::result_of<ValueContinuation(Types...)>::type U;
 
     if (bbp::get_if<waiting_state>(d_data->d_state)) {
       // TODO: think deeply about f and ef captures. These should probably be
       // moved in. Maybe some tests with weird functions should be used.
       return promise<U>([this, f, ef](auto fulfill, auto reject) {
         d_data->d_childFutures.emplace_back(
-            [f, fulfill, reject](Type t) {
+            [f, fulfill, reject](Types... t) {
               try {
-                fulfill(f(t));
+                fulfill(f(t...));
               } catch (...) {
                 reject(std::current_exception());
               }
@@ -102,11 +102,12 @@ public:
               }
             });
       });
-    } else if (Type *t = bbp::get_if<fulfilled_state>(d_data->d_state)) {
+    } else if (std::tuple<Types...> *t = bbp::get_if<fulfilled_state>(d_data->d_state)) {
       return promise<U>(
           [ t, f = std::move(f) ](auto fulfill, auto reject) mutable {
             try {
-              fulfill(f(*t));
+              // TODO: need to call f using the tuple's arguments.
+              fulfill(std::experimental::apply(f,*t));
             } catch (...) {
               reject(std::current_exception());
             }
@@ -123,8 +124,8 @@ public:
           });
     }
   }
-  template <Callable<Type> ValueContinuation>
-  promise<typename std::result_of<ValueContinuation(Type)>::type>
+  template <Callable<Types...> ValueContinuation>
+  promise<typename std::result_of<ValueContinuation(Types...)>::type>
   then(ValueContinuation f) {
     // Note that this function is semantically equivelent to
     // ```
@@ -132,25 +133,25 @@ public:
     // ```
     // We directly implement it here to avoid the rethrow of the exception.
 
-    typedef typename std::result_of<ValueContinuation(Type)>::type U;
+    typedef typename std::result_of<ValueContinuation(Types...)>::type U;
 
     if (bbp::get_if<waiting_state>(d_data->d_state)) {
       return promise<U>([this, f](auto fulfill, auto reject) {
         d_data->d_childFutures.emplace_back(
-            [f, fulfill, reject](Type t) {
+            [f, fulfill, reject](Types... t) {
               try {
-                fulfill(f(t));
+                fulfill(f(t...));
               } catch (...) {
                 reject(std::current_exception());
               }
             },
             [reject](std::exception_ptr e) { reject(e); });
       });
-    } else if (Type *t = bbp::get_if<fulfilled_state>(d_data->d_state)) {
+    } else if (std::tuple<Types...> *t = bbp::get_if<fulfilled_state>(d_data->d_state)) {
       return promise<U>(
           [ t, f = std::move(f) ](auto fulfill, auto reject) mutable {
             try {
-              fulfill(f(*t));
+              fulfill(std::experimental::apply(f,*t));
             } catch (...) {
               reject(std::current_exception());
             }
@@ -163,8 +164,13 @@ public:
   }
 };
 
-// TODO: Add empty promises.
-// TODO: Add variadic promises.
+// TODO: Add support for a then result of void producing an empty promise.
+// TODO: Add support for a then result of a promise producing a promise of
+// the internal type instead of a promise promise.
+// TODO: Add support for a then result of a tuple.
+// TODO: Add support for a then result of a 'keep' which keeps the result
+// value no matter what its type is.
+// TODO: All function arguments should be by &&
 // TODO: In the context of 'then', if 'ef's return value is convertable to 'f's
 // return value, that should be okay.
 // TODO: For this implementation to work properly, we are guarenteeing that
