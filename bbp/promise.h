@@ -358,4 +358,11 @@ class promise {
 // TODO: Consider adding a second 'rejected' function which uses the Types
 // argument of the promise. Really, these things should be independent of the
 // class template in a PromiseUtil.
+// TODO: Move these TODO's elsewhere.
+// TODO: Consider how one would write a 'fulfilled' with move semantics that
+// doesn't use any private members.
+// TODO: Add an optimization that assumes only a single instance of the
+// promise. This should allow for inlining and allocation avoidance. There
+// would be an internal state that would switch between a shared_ptr data and
+// an internal data.
 }
