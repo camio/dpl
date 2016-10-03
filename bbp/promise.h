@@ -304,11 +304,43 @@ class promise {
             });
         }
     }
+
+    // Return a promise with the specified types that is fulfilled with the
+    // specified 'values'.
+    template <typename...     Types2>
+    static promise<Types2...> fulfilled(Types2&&... values)
+    {
+        promise<Types2...> result;
+        result.d_data->d_state.template emplace<fulfilled_state>(
+            std::move(values)...);
+        return result;
+    }
+
+    // Return a promise with the specified types that is rejected with the
+    // specified 'error'.
+    template <typename...     Types2>
+    static promise<Types2...> rejected(std::exception_ptr error)
+    {
+        promise<Types2...> result;
+        result.d_data->d_state.template emplace<rejected_state>(
+            std::move(error));
+        return result;
+    }
+
+  private:
+    // Create a new 'promise' object in the waiting state. It is never
+    // fulfilled.
+    promise()
+    : d_data(std::make_shared<data>())
+    {
+    }
 };
 
 // TODO: Add support for a then result of a promise producing a promise of
 // the internal type instead of a promise promise.
-// TODO: Add fulfilled and rejected static functions.
+// TODO: clean up the test cases now that we have 'fulfilled' and 'rejected'
+// static functions.
+// TODO: Add cancelation support
 // TODO: Add support for a then result of a tuple.
 // TODO: Add support for a then result of a 'keep' which keeps the result
 // value no matter what its type is.
@@ -323,4 +355,7 @@ class promise {
 // TODO: The common-type of the results of the 'f' and 'ef' functions should be
 // used as the resulting promise's type  for the two arguent versions of
 // 'then'.
+// TODO: Consider adding a second 'rejected' function which uses the Types
+// argument of the promise. Really, these things should be independent of the
+// class template in a PromiseUtil.
 }

@@ -45,7 +45,7 @@ TEST(bbp_promise, then_two_arg)
             result = "error";
             return bbp::monostate();
         });
-    ASSERT_EQ(result, "3") << "The then function wasn't called.";
+    EXPECT_EQ(result, "3") << "The then function wasn't called.";
 
     result = "";
     ps.then(
@@ -75,7 +75,7 @@ TEST(bbp_promise, then_two_arg)
                 }
                 return bbp::monostate();
             });
-    ASSERT_EQ(result, "expected_error") << "Error handling didn't happen.";
+    EXPECT_EQ(result, "expected_error") << "Error handling didn't happen.";
 }
 
 TEST(bbp_promise, then_one_arg)
@@ -89,7 +89,7 @@ TEST(bbp_promise, then_one_arg)
         result = s;
         return bbp::monostate();
     });
-    ASSERT_EQ(result, "3") << "The then function wasn't called.";
+    EXPECT_EQ(result, "3") << "The then function wasn't called.";
 
     result = "";
     bbp::promise<bbp::monostate>(
@@ -115,7 +115,41 @@ TEST(bbp_promise, then_one_arg)
                 }
                 return bbp::monostate();
             });
-    ASSERT_EQ(result, "expected_error") << "Error handling didn't happen.";
+    EXPECT_EQ(result, "expected_error") << "Error handling didn't happen.";
+}
+
+TEST(bbp_promise, fulfilled)
+{
+    bbp::promise<int, double> p = bbp::promise<>::fulfilled(3, 2.5);
+
+    bool fulfilled = false;
+    p.then([&fulfilled](int i, double d) {
+        fulfilled = true;
+        EXPECT_EQ(i, 3) << "Unexpected value in fulfilled promise.";
+        EXPECT_EQ(d, 2.5) << "Unexpected value in fulfilled promise.";
+    });
+    EXPECT_TRUE(fulfilled) << "Promise wasn't fulfilled.";
+}
+
+TEST(bbp_promise, rejected)
+{
+    std::exception_ptr error;
+    try {
+        throw std::runtime_error("test");
+    }
+    catch (...) {
+        error = std::current_exception();
+    }
+
+    bbp::promise<int, double> p = bbp::promise<>::rejected<int,double>(error);
+
+    bool rejected = false;
+    p.then([](int i, double d) { ADD_FAILURE() << "Unexpected fulfillment."; },
+           [&rejected, &error](std::exception_ptr e) {
+               EXPECT_EQ(e, error) << "Rejected with wrong exception";
+               rejected = true;
+           });
+    EXPECT_TRUE(rejected) << "Promise wasn't rejected.";
 }
 
 // TODO: add some tests that interact with asio.
