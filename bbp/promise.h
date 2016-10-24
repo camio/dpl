@@ -16,67 +16,82 @@ concept bool Callable = requires(F f, Types... t)
     f(t...);
 };
 
+// Because one cannot write a concept that uses an "instance" of another
+// concept, I use placeholders to kind-of simulate that idea. This class acts
+// like an arbitrary callable that matches the above Callable concept.
 template <typename... Types>
 class callable_placeholder {
     void operator()(Types...) const {}
 };
 
+// Types that are "Resolvers<Types...>" have instances that take in callables
+// as their first parameters. These callables take in 'Types...' in the call
+// operator. This is kinda hard to explain.
 template <typename F, typename... Types>
 concept bool Resolver = requires(F f, Types... t)
 {
-    // Cannot use a lambda as in the following snippet because it would be in
-    // an unevaluated context.
-    //   resolver([](Type){}, [](std::exception_ptr){});
-    // Instead we use a placeholder type.
-    //
-    // TODO: `callable_placeholder` is not sufficient. We also need to "verify"
-    // that function pointers and other invokables work.
-
+    // Note that `callable_placeholder` is not sufficient. We also need to
+    // check that function pointers and other invokables work.
     f(callable_placeholder<Types...>(),
       callable_placeholder<std::exception_ptr>());
 };
 
+// Here's our promise object. It is like a 'future' except we have different
+// constructors, different then operations, and support multiple fulfilled
+// types.
 template <typename... Types>
 class promise {
+    // The promise can be in tese three states
     static const std::size_t waiting_state   = 0;
     static const std::size_t fulfilled_state = 1;
     static const std::size_t rejected_state  = 2;
 
     struct data {
-        bbp::variant<bbp::monostate, std::tuple<Types...>, std::exception_ptr>
-            d_state;
+        // Some of the three states carry data.
+        bbp::variant<
+            // The waiting state carries with it a list of functions that need
+            // to be called when a value is actually present.
+            std::vector<std::pair<std::function<void(Types...)>,
+                                  std::function<void(std::exception_ptr)> > >,
 
-        // TODO: Is this the best type for this vector to have, or is there
-        // something better? Each function might get its own allocation
-        // unfortunately.
-        std::vector<std::pair<std::function<void(Types...)>,
-                              std::function<void(std::exception_ptr)> > >
-            d_childFutures;
+            // The fulfilled state carries with it a tuple of the fulfilled
+            // values.
+            std::tuple<Types...>,
+
+            // The rejected state carries with it a 'std::exception_ptr'.
+            std::exception_ptr>
+            d_state;
     };
 
-    // TODO: Think about whether or not this needs to be protected by a mutex.
-    // Think about which operations can be called concurrently.
+    // Promises can be copied and there is no semantic problem with this since
+    // they have no mutating members. Well, at least until a 'cancel' operation
+    // is implemented anyway.
     std::shared_ptr<data> d_data;
 
   public:
-    using types = std::tuple<Types...>;
+
+    // TODO: left off here for initial code review documentation.
 
     promise(Resolver<Types...> resolver)
     : d_data(std::make_shared<data>())
     {
         resolver(
             [d_data = this->d_data](Types... t) noexcept {
-                // TODO: think about how I can move t into the state and then
-                // use it
-                // for the child future notifications.
-                d_data->d_state.template emplace<fulfilled_state>(t...);
-                for (auto&& pf : d_data->d_childFutures)
+                // Call all the waiting functions with the fulfill value.
+                for (auto&& pf : bbp::get<waiting_state>(d_data->d_state))
                     pf.first(t...);
+
+                // Move to the fulfilled state
+                d_data->d_state.template emplace<fulfilled_state>(
+                    std::move(t)...);
             },
             [d_data = this->d_data](std::exception_ptr e) noexcept {
-                d_data->d_state.template emplace<rejected_state>(e);
-                for (auto&& pf : d_data->d_childFutures)
+                // Call all the waiting functions with the exception.
+                for (auto&& pf : bbp::get<waiting_state>(d_data->d_state))
                     pf.second(e);
+
+                // Move to the rejected state
+                d_data->d_state.template emplace<rejected_state>(std::move(e));
             });
     }
 
@@ -96,29 +111,33 @@ class promise {
     {
         typedef typename std::result_of<ValueContinuation(Types...)>::type U;
 
-        if (bbp::get_if<waiting_state>(d_data->d_state)) {
+        if (std::vector<std::pair<std::function<void(Types...)>,
+                                  std::function<void(std::exception_ptr)> > >
+                *const waitingFunctions =
+                    bbp::get_if<waiting_state>(d_data->d_state)) {
             // TODO: think deeply about f and ef captures. These should
-            // probably be
-            // moved in. Maybe some tests with weird functions should be used.
-            return promise<U>([this, f, ef](auto fulfill, auto reject) {
-                d_data->d_childFutures.emplace_back(
-                    [f, fulfill, reject](Types... t) {
-                        try {
-                            fulfill(f(t...));
-                        }
-                        catch (...) {
-                            reject(std::current_exception());
-                        }
-                    },
-                    [ef, fulfill, reject](std::exception_ptr e) {
-                        try {
-                            fulfill(ef(e));
-                        }
-                        catch (...) {
-                            reject(std::current_exception());
-                        }
-                    });
-            });
+            // probably be moved in. Maybe some tests with weird functions
+            // should be used.
+            return promise<U>(
+                [waitingFunctions, f, ef](auto fulfill, auto reject) {
+                    waitingFunctions->emplace_back(
+                        [f, fulfill, reject](Types... t) {
+                            try {
+                                fulfill(f(t...));
+                            }
+                            catch (...) {
+                                reject(std::current_exception());
+                            }
+                        },
+                        [ef, fulfill, reject](std::exception_ptr e) {
+                            try {
+                                fulfill(ef(e));
+                            }
+                            catch (...) {
+                                reject(std::current_exception());
+                            }
+                        });
+                });
         }
         else if (std::tuple<Types...> *t =
                      bbp::get_if<fulfilled_state>(d_data->d_state)) {
@@ -157,31 +176,35 @@ class promise {
                         ErrorContinuation(std::exception_ptr)>::type>::value)
         promise<> then(ValueContinuation f, ErrorContinuation ef)
     {
-        if (bbp::get_if<waiting_state>(d_data->d_state)) {
+        if (std::vector<std::pair<std::function<void(Types...)>,
+                                  std::function<void(std::exception_ptr)> > >
+                *const waitingFunctions =
+                    bbp::get_if<waiting_state>(d_data->d_state)) {
             // TODO: think deeply about f and ef captures. These should
-            // probably be
-            // moved in. Maybe some tests with weird functions should be used.
-            return promise<>([this, f, ef](auto fulfill, auto reject) {
-                d_data->d_childFutures.emplace_back(
-                    [f, fulfill, reject](Types... t) {
-                        try {
-                            f(t...);
-                            fulfill();
-                        }
-                        catch (...) {
-                            reject(std::current_exception());
-                        }
-                    },
-                    [ef, fulfill, reject](std::exception_ptr e) {
-                        try {
-                            ef(e);
-                            fulfill();
-                        }
-                        catch (...) {
-                            reject(std::current_exception());
-                        }
-                    });
-            });
+            // probably be moved in. Maybe some tests with weird functions
+            // should be used.
+            return promise<>(
+                [waitingFunctions, f, ef](auto fulfill, auto reject) {
+                    waitingFunctions->emplace_back(
+                        [f, fulfill, reject](Types... t) {
+                            try {
+                                f(t...);
+                                fulfill();
+                            }
+                            catch (...) {
+                                reject(std::current_exception());
+                            }
+                        },
+                        [ef, fulfill, reject](std::exception_ptr e) {
+                            try {
+                                ef(e);
+                                fulfill();
+                            }
+                            catch (...) {
+                                reject(std::current_exception());
+                            }
+                        });
+                });
         }
         else if (std::tuple<Types...> *t =
                      bbp::get_if<fulfilled_state>(d_data->d_state)) {
@@ -218,9 +241,12 @@ class promise {
         promise<>
         then(ValueContinuation f)
     {
-        if (bbp::get_if<waiting_state>(d_data->d_state)) {
-            return promise<>([this, f](auto fulfill, auto reject) {
-                d_data->d_childFutures.emplace_back(
+        if (std::vector<std::pair<std::function<void(Types...)>,
+                                  std::function<void(std::exception_ptr)> > >
+                *const waitingFunctions =
+                    bbp::get_if<waiting_state>(d_data->d_state)) {
+            return promise<>([waitingFunctions, f](auto fulfill, auto reject) {
+                waitingFunctions->emplace_back(
                     [f, fulfill, reject](Types... t) {
                         try {
                             f(t...);
@@ -271,19 +297,23 @@ class promise {
     {
         typedef typename std::result_of<ValueContinuation(Types...)>::type U;
 
-        if (bbp::get_if<waiting_state>(d_data->d_state)) {
-            return promise<U>([this, f](auto fulfill, auto reject) {
-                d_data->d_childFutures.emplace_back(
-                    [f, fulfill, reject](Types... t) {
-                        try {
-                            fulfill(f(t...));
-                        }
-                        catch (...) {
-                            reject(std::current_exception());
-                        }
-                    },
-                    [reject](std::exception_ptr e) { reject(e); });
-            });
+        if (std::vector<std::pair<std::function<void(Types...)>,
+                                  std::function<void(std::exception_ptr)> > >
+                *const waitingFunctions =
+                    bbp::get_if<waiting_state>(d_data->d_state)) {
+            return promise<U>(
+                [waitingFunctions, f](auto fulfill, auto reject) {
+                    waitingFunctions->emplace_back(
+                        [f, fulfill, reject](Types... t) {
+                            try {
+                                fulfill(f(t...));
+                            }
+                            catch (...) {
+                                reject(std::current_exception());
+                            }
+                        },
+                        [reject](std::exception_ptr e) { reject(e); });
+                });
         }
         else if (std::tuple<Types...> *t =
                      bbp::get_if<fulfilled_state>(d_data->d_state)) {
@@ -335,34 +365,4 @@ class promise {
     {
     }
 };
-
-// TODO: Add support for a then result of a promise producing a promise of
-// the internal type instead of a promise promise.
-// TODO: clean up the test cases now that we have 'fulfilled' and 'rejected'
-// static functions.
-// TODO: Add cancelation support
-// TODO: Add support for a then result of a tuple.
-// TODO: Add support for a then result of a 'keep' which keeps the result
-// value no matter what its type is.
-// TODO: All function arguments should be by &&
-// TODO: In the context of 'then', if 'ef's return value is convertable to 'f's
-// return value, that should be okay.
-// TODO: For this implementation to work properly, we are guarenteeing that
-// the fulfil and reject functions passed to the resolver do not throw
-// exceptions. To fix this, I need to ensure that my "try catch" block is over
-// the call of the functions passed into then. The result then needs to be
-// captured and used later.
-// TODO: The common-type of the results of the 'f' and 'ef' functions should be
-// used as the resulting promise's type  for the two arguent versions of
-// 'then'.
-// TODO: Consider adding a second 'rejected' function which uses the Types
-// argument of the promise. Really, these things should be independent of the
-// class template in a PromiseUtil.
-// TODO: Move these TODO's elsewhere.
-// TODO: Consider how one would write a 'fulfilled' with move semantics that
-// doesn't use any private members.
-// TODO: Add an optimization that assumes only a single instance of the
-// promise. This should allow for inlining and allocation avoidance. There
-// would be an internal state that would switch between a shared_ptr data and
-// an internal data.
 }

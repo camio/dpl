@@ -1,7 +1,43 @@
 # Promise Library
 
-TODO:
-  - Use invokable teminology instead of callable.
+This library makes use of a variant library in the 'bbp' namespace. This is a
+copy of Anthony Williams 'std::variant' implementation.
+
+## TODO's
+
+- Use invokable teminology instead of callable?
+- Add support for a then result of a promise producing a promise of the
+  internal type instead of a promise promise.
+- clean up the test cases now that we have 'fulfilled' and 'rejected' static
+  functions.
+- Add cancelation support
+- Add support for a then result of a tuple.
+- Add support for a then result of a 'keep' which keeps the result value no
+  matter what its type is.
+- All function arguments should be by &&
+- In the context of 'then', if 'ef's return value is convertable to 'f's return
+  value, that should be okay.
+- For this implementation to work properly, we are guarenteeing that the fulfil
+  and reject functions passed to the resolver do not throw exceptions. To fix
+  this, I need to ensure that my "try catch" block is over the call of the
+  functions passed into then. The result then needs to be captured and used
+  later.
+- The common-type of the results of the 'f' and 'ef' functions should be used
+  as the resulting promise's type  for the two arguent versions of 'then'.
+- Consider adding a second 'rejected' function which uses the Types argument of
+  the promise. Really, these things should be independent of the class template
+  in a PromiseUtil.
+- Move these TODO's elsewhere.
+- Consider how one would write a 'fulfilled' with move semantics that doesn't
+  use any private members.
+- Add an optimization that assumes only a single instance of the promise. This
+  should allow for inlining and allocation avoidance. There would be an
+  internal state that would switch between a shared_ptr data and an internal
+  data.
+- Make these things thread safe. Accesses to the stuff pointed to by 'd_data'
+  need to be protected by a mutex I think.
+- Consider a type other than the vector of function pairs for the waiting state
+  data. I don't like the idea that it may allocate twice for this.
 
 
 ## Concepts TS
