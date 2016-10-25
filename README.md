@@ -7,7 +7,8 @@ copy of Anthony Williams 'std::variant' implementation.
 
 - Add unit tests to verify that move-only continuation functions work properly.
 - Think about adding support for "call-once" functions (viz. those that have
-  only a && call operator defined.) in both continuations and resolvers.
+  only a && call operator defined.) as both continuations and resolvers. I
+  think support is mostly there, but we need tests to verify.
 - Add support for a then result of a promise producing a promise of the
   internal type instead of a promise promise.
 - clean up the test cases now that we have 'fulfilled' and 'rejected' static
@@ -46,6 +47,8 @@ copy of Anthony Williams 'std::variant' implementation.
   `shared_ptr<shared_ptr<data>>` object that both of those functions reference.
   At the first call, the "inner" shared pointer is made null.
 - Make all the comments follow the signatures.
+- Make the 'then' functions 'const' since they don't change the semantic value
+  of a promise.
 
 
 ## Concepts TS
