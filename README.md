@@ -5,7 +5,9 @@ copy of Anthony Williams 'std::variant' implementation.
 
 ## TODO's
 
-- Use invokable teminology instead of callable?
+- Add unit tests to verify that move-only continuation functions work properly.
+- Think about adding support for "call-once" functions (viz. those that have
+  only a && call operator defined.) in both continuations and resolvers.
 - Add support for a then result of a promise producing a promise of the
   internal type instead of a promise promise.
 - clean up the test cases now that we have 'fulfilled' and 'rejected' static
@@ -38,6 +40,12 @@ copy of Anthony Williams 'std::variant' implementation.
   need to be protected by a mutex I think.
 - Consider a type other than the vector of function pairs for the waiting state
   data. I don't like the idea that it may allocate twice for this.
+- Make the 'fulfil' and 'reject' functions which are passed to the 'resolver'
+  in the 'promise' constructor release their reference to 'd_data' when one of
+  the two is called. The only way that I can think of doing this is to make a
+  `shared_ptr<shared_ptr<data>>` object that both of those functions reference.
+  At the first call, the "inner" shared pointer is made null.
+- Make all the comments follow the signatures.
 
 
 ## Concepts TS
