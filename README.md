@@ -139,7 +139,7 @@ CXX=g++-6.2 make
   internal state that would switch between a shared_ptr data and an internal
   data.
 
-## Problems with `std::future` and `std::promise`.
+## Problems with `std::future` and `std::promise`
 - Pain to get exceptions out.
 - No "then" hampers usage.
 - Don't want blocking '.get'

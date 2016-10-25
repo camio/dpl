@@ -13,8 +13,7 @@ TEST(bbp_promise, empty_promise)
 }
 
 // Check that when the then function has a 'void' return, then the
-// corresponding
-// promise is an empty promise.
+// corresponding promise is an empty promise.
 TEST(bbp_promise, void_then)
 {
     bbp::promise<> foo = bbp::promise<>([](auto fulfill, auto reject) {
@@ -30,6 +29,7 @@ TEST(bbp_promise, then_two_arg)
 {
     //  Note the error message here. Concepts doesn't help.
     //  bbp::promise<int> q([](auto fulfill, auto reject) { fulfill("33"); });
+
     bbp::promise<std::string> ps =
         bbp::promise<int>([](auto fulfill, auto reject) { fulfill(3); })
             .then([](int i) { return std::string(std::to_string(i)); },
@@ -141,7 +141,7 @@ TEST(bbp_promise, reject)
         error = std::current_exception();
     }
 
-    bbp::promise<int, double> p = bbp::promise<>::reject<int,double>(error);
+    bbp::promise<int, double> p = bbp::promise<>::reject<int, double>(error);
 
     bool rejected = false;
     p.then([](int i, double d) { ADD_FAILURE() << "Unexpected fulfillment."; },
