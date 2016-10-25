@@ -1,6 +1,6 @@
 # Promise Library
 
-PURPOSE: Provide a promise vocabulary type for asynchronous applications.
+**PURPOSE:** Provide a promise vocabulary type for asynchronous applications.
 
 Files:
 
@@ -63,6 +63,31 @@ myServer.run();
 Note that the implementation is currently incomplete in that #3 and #2 then
 overloads have not yet been implemented.
 
+## Building
+
+This can be built with GCC 6.2 and a recent version of `gtest`. To get such an environment on a Bloomberg Linux machine, such as apinjdev02, add something like the following to your `~/.bash_profile`,
+
+```bash
+# GCC
+export PATH=/home/dsankel/bs/opt/gcc/bin:$PATH
+export LD_LIBRARY_PATH=/home/dsankel/bs/opt/gcc/lib64:/home/dsankel/bs/opt/gccdeps/lib:$LD_LIBRARY_PATH
+export MANPATH=/home/dsankel/bs/opt/gcc/share/man:$MANPATH
+export INFOPATH=/home/dsankel/bs/opt/gcc/share/info:$INFOPATH
+
+# Google Test
+export LIBRARY_PATH=/home/dsankel/bs/opt/gtest/lib:$LIBRARY_PATH
+export CPATH=/home/dsankel/bs/opt/gtest/include:$CPATH
+export PKG_CONFIG_PATH=/home/dsankel/bs/opt/gtest/lib/pkgconfig:$PKG_CONFIG_PATH
+```
+
+, and then build with the following command,
+
+```bash
+CXX=g++-6.2 make
+```
+
+. This will build and run the unit tests.
+
 ## TODO's
 
 ### Priority 1
@@ -72,6 +97,7 @@ overloads have not yet been implemented.
 - Add support for the #3 then overloads.
 - Add support for the #2 then overloads.
 - Make all the comments follow the signatures in BDE style.
+- Look at other ways to make this more closely follow the BDE style.
 
 ### Priority 2
 
