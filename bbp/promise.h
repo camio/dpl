@@ -435,7 +435,7 @@ class promise {
     // Return a promise with the specified types that is fulfilled with the
     // specified 'values'.
     template <typename...     Types2>
-    static promise<Types2...> fulfilled(Types2&&... values)
+    static promise<Types2...> fulfill(Types2&&... values)
     {
         promise<Types2...> result;
         result.d_data->d_state.template emplace<fulfilled_state>(
@@ -446,7 +446,7 @@ class promise {
     // Return a promise with the specified types that is rejected with the
     // specified 'error'.
     template <typename...     Types2>
-    static promise<Types2...> rejected(std::exception_ptr error)
+    static promise<Types2...> reject(std::exception_ptr error)
     {
         promise<Types2...> result;
         result.d_data->d_state.template emplace<rejected_state>(

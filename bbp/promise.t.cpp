@@ -118,9 +118,9 @@ TEST(bbp_promise, then_one_arg)
     EXPECT_EQ(result, "expected_error") << "Error handling didn't happen.";
 }
 
-TEST(bbp_promise, fulfilled)
+TEST(bbp_promise, fulfill)
 {
-    bbp::promise<int, double> p = bbp::promise<>::fulfilled(3, 2.5);
+    bbp::promise<int, double> p = bbp::promise<>::fulfill(3, 2.5);
 
     bool fulfilled = false;
     p.then([&fulfilled](int i, double d) {
@@ -131,7 +131,7 @@ TEST(bbp_promise, fulfilled)
     EXPECT_TRUE(fulfilled) << "Promise wasn't fulfilled.";
 }
 
-TEST(bbp_promise, rejected)
+TEST(bbp_promise, reject)
 {
     std::exception_ptr error;
     try {
@@ -141,7 +141,7 @@ TEST(bbp_promise, rejected)
         error = std::current_exception();
     }
 
-    bbp::promise<int, double> p = bbp::promise<>::rejected<int,double>(error);
+    bbp::promise<int, double> p = bbp::promise<>::reject<int,double>(error);
 
     bool rejected = false;
     p.then([](int i, double d) { ADD_FAILURE() << "Unexpected fulfillment."; },
