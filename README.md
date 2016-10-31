@@ -94,7 +94,6 @@ CXX=g++-6.2 make
 - Make the 'then' function and the 'resolve' and 'reject' functions generated
   in the constructor thread safe. I think, in essence, d_data and all it points
   to needs to be protected with a mutex.
-- Add support for the #3 then overloads.
 - Add support for the #2 then overloads.
 - Make all the comments follow the signatures in BDE style.
 - Look at other ways to make this more closely follow the BDE style.
@@ -117,6 +116,7 @@ CXX=g++-6.2 make
   should be created for this.
 - Make the 'then' functions 'const' since they don't change the semantic value
   of a promise.
+- Carefully go over unit tests to be sure all branches are being tested.
 
 ### Priority 3
 - Add support for a then result of a 'keep' which keeps the result value no
