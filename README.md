@@ -60,9 +60,6 @@ requestPromise
 myServer.run();
 ```
 
-Note that the implementation is currently incomplete in that #3 and #2 then
-overloads have not yet been implemented.
-
 ## Building
 
 This can be built with GCC 6.2 and a recent version of `gtest`. To get such an environment on a Bloomberg Linux machine, such as apinjdev02, add something like the following to your `~/.bash_profile`,
@@ -94,9 +91,9 @@ CXX=g++-6.2 make
 - Make the 'then' function and the 'resolve' and 'reject' functions generated
   in the constructor thread safe. I think, in essence, d_data and all it points
   to needs to be protected with a mutex.
-- Add support for the #2 then overloads.
 - Make all the comments follow the signatures in BDE style.
 - Look at other ways to make this more closely follow the BDE style.
+- Consider how to properly handle cv qualifiers in continuation return types.
 
 ### Priority 2
 

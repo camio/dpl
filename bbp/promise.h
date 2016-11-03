@@ -53,6 +53,23 @@ concept bool IsPromise = requires(T t) {
   {t} -> promise<auto...>
 };
 
+template <typename T>
+concept bool IsTuple = requires(T t) {
+  {t} -> std::tuple<auto...>
+};
+
+template<typename T>
+struct PromiseFromTuple{
+};
+
+template<typename... T>
+struct PromiseFromTuple<std::tuple<T...>>{
+  using type = bbp::promise<T...>;
+};
+
+template<typename Tuple>
+using PromiseFromTuple_t = typename PromiseFromTuple<Tuple>::type;
+
 // This class implements a value semantic type representing a heterogenius
 // sequence of values or exception at some point in time.
 //
@@ -307,6 +324,149 @@ class promise {
 
     template <Callable<Types...>           FulfilledCont,
               Callable<std::exception_ptr> RejectedCont>
+    PromiseFromTuple_t<std::result_of_t<FulfilledCont(Types...)>>
+    then(FulfilledCont fulfilledCont,
+         RejectedCont  rejectedCont)  // Two-argument version of case #2
+        requires
+        // tuple return type
+        IsTuple<std::result_of_t<FulfilledCont(Types...)>> &&
+
+        // 'fulfilledCont' and 'rejectedCont' have matching return values
+        std::experimental::is_same_v<
+            std::result_of_t<FulfilledCont(Types...)>,
+            std::result_of_t<RejectedCont(std::exception_ptr)> >
+    {
+        using Result = PromiseFromTuple_t<std::result_of_t<FulfilledCont(Types...)>>;
+
+        if (std::vector<std::pair<std::function<void(Types...)>,
+                                  std::function<void(std::exception_ptr)> > >
+                *const waitingFunctions =
+                    bbp::get_if<waiting_state>(d_data->d_state)) {
+            return Result([
+                waitingFunctions,
+                fulfilledCont = std::move(fulfilledCont),
+                rejectedCont  = std::move(rejectedCont)
+            ](auto fulfill, auto reject) mutable {
+                waitingFunctions->emplace_back(
+                    [
+                      fulfilledCont = std::move(fulfilledCont),
+                      fulfill,
+                      reject
+                    ](Types... t) mutable {
+                        try {
+                          std::experimental::apply(
+                              fulfill, std::move(fulfilledCont)(t...));
+                        }
+                        catch (...) {
+                            reject(std::current_exception());
+                        }
+                    },
+                    [
+                      rejectedCont = std::move(rejectedCont),
+                      fulfill,
+                      reject
+                    ](std::exception_ptr e) mutable {
+                        try {
+                            std::experimental::apply(fulfill,
+                                                     std::move(rejectedCont)(e));
+                        }
+                        catch (...) {
+                            reject(std::current_exception());
+                        }
+                    });
+            });
+        }
+        else if (std::tuple<Types...> const *const fulfilledValues =
+                     bbp::get_if<fulfilled_state>(d_data->d_state)) {
+            return Result(
+                [ fulfilledValues, fulfilledCont = std::move(fulfilledCont) ](
+                    auto fulfill, auto reject) mutable {
+                    try {
+                      std::experimental::apply(
+                          fulfill,
+                          std::experimental::apply(std::move(fulfilledCont),
+                                                   *fulfilledValues));
+                    }
+                    catch (...) {
+                        reject(std::current_exception());
+                    }
+                });
+        }
+        else {
+            const std::exception_ptr& rejectedException =
+                bbp::get<rejected_state>(d_data->d_state);
+            return Result(
+                [&rejectedException, rejectedCont = std::move(rejectedCont) ](
+                    auto fulfill, auto reject) mutable {
+                    try {
+                      std::experimental::apply(
+                          fulfill, std::move(rejectedCont)(rejectedException));
+                    }
+                    catch (...) {
+                        reject(std::current_exception());
+                    }
+                });
+        }
+    }
+
+    template <Callable<Types...>           FulfilledCont>
+    PromiseFromTuple_t<std::result_of_t<FulfilledCont(Types...)>>
+    then(FulfilledCont fulfilledCont)  // One-argument version of case #2
+        requires
+        // tuple return type
+        IsTuple<std::result_of_t<FulfilledCont(Types...)>>
+    {
+      using Result =
+          PromiseFromTuple_t<std::result_of_t<FulfilledCont(Types...)>>;
+
+      if (std::vector<std::pair<std::function<void(Types...)>,
+                                std::function<void(std::exception_ptr)>>>
+              *const waitingFunctions =
+                  bbp::get_if<waiting_state>(d_data->d_state)) {
+        return Result([
+          waitingFunctions, fulfilledCont = std::move(fulfilledCont)
+        ](auto fulfill, auto reject) mutable {
+          waitingFunctions->emplace_back(
+              [ fulfilledCont = std::move(fulfilledCont), fulfill,
+                reject ](Types... t) mutable {
+                try {
+                  std::experimental::apply(fulfill,
+                                           std::move(fulfilledCont)(t...));
+                } catch (...) {
+                  reject(std::current_exception());
+                }
+              },
+              [reject](std::exception_ptr e) { reject(e); });
+        });
+        }
+        else if (std::tuple<Types...> const *const fulfilledValues =
+                     bbp::get_if<fulfilled_state>(d_data->d_state)) {
+            return Result(
+                [ fulfilledValues, fulfilledCont = std::move(fulfilledCont) ](
+                    auto fulfill, auto reject) mutable {
+                    try {
+                      std::experimental::apply(
+                          fulfill,
+                          std::experimental::apply(std::move(fulfilledCont),
+                                                   *fulfilledValues));
+                    }
+                    catch (...) {
+                        reject(std::current_exception());
+                    }
+                });
+        }
+        else {
+            const std::exception_ptr& rejectedException =
+                bbp::get<rejected_state>(d_data->d_state);
+            return Result(
+                [&rejectedException](auto fulfill, auto reject) mutable {
+                    reject(rejectedException);
+                });
+        }
+    }
+
+    template <Callable<Types...>           FulfilledCont,
+              Callable<std::exception_ptr> RejectedCont>
     std::result_of_t<FulfilledCont(Types...)>
     then(FulfilledCont fulfilledCont,
          RejectedCont  rejectedCont)  // Two-argument version of case #3
@@ -467,6 +627,9 @@ class promise {
         !std::experimental::is_void_v<
             std::result_of_t<FulfilledCont(Types...)> > &&
 
+        // non-tuple return type
+        !IsTuple<std::result_of_t<FulfilledCont(Types...)>> &&
+
         // non-promise return type
         !IsPromise<std::result_of_t<FulfilledCont(Types...)>> &&
 
@@ -550,6 +713,10 @@ class promise {
         // non-void return type
         !std::experimental::is_void_v<
             std::result_of_t<FulfilledCont(Types...)> > &&
+
+        // non-tuple return type
+        !IsTuple<std::result_of_t<FulfilledCont(Types...)>> &&
+
         // non-promise return type
         !IsPromise<std::result_of_t<FulfilledCont(Types...)>>
     {

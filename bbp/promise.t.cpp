@@ -168,6 +168,40 @@ TEST(bbp_promise, then_promise_promise) {
   }
 }
 
+TEST(bbp_promise, then_tuple) {
+  bbp::promise<> p = bbp::promise<>::fulfill();
+
+  {
+    bbp::promise<int, std::string> p2 =
+        p.then([] { return std::make_tuple(3, std::string("test")); });
+
+    bool fulfilled = false;
+    p2.then([&fulfilled](int i, const std::string & s) {
+      fulfilled = true;
+      EXPECT_EQ(i, 3) << "Unexpected value in fulfilled promise.";
+      EXPECT_EQ(s, "test") << "Unexpected value in fulfilled promise.";
+    });
+    EXPECT_TRUE(fulfilled) << "Promise wasn't fulfilled.";
+  }
+  {
+    bbp::promise<int, std::string> p2 =
+        p.then([] { return std::make_tuple(3, std::string("test")); },
+               [](std::exception_ptr e) {
+                ADD_FAILURE() << "Unexpected exception thrown.";
+                return std::make_tuple(4, std::string("test2"));
+               }
+               );
+
+    bool fulfilled = false;
+    p2.then([&fulfilled](int i, const std::string & s) {
+      fulfilled = true;
+      EXPECT_EQ(i, 3) << "Unexpected value in fulfilled promise.";
+      EXPECT_EQ(s, "test") << "Unexpected value in fulfilled promise.";
+    });
+    EXPECT_TRUE(fulfilled) << "Promise wasn't fulfilled.";
+  }
+}
+
 // TODO: add some tests that interact with asio.
 //       - ASIO_STANDALONE is the definition required.
 // TODO: add test that exceptions in the resolver are rethrown.
