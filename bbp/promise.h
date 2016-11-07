@@ -2,7 +2,7 @@
 #define BBP_PROMISE_INCLUDED
 
 #include <dpl/bbp/ranges_concepts.h> // bbp::Callable
-#include <dpl/bbp/variant.h>
+#include <dpl/m17/variant.h>
 
 #include <experimental/tuple> // std::experimental::apply
 #include <experimental/type_traits> // std::experimental::is_void_v, std::experimental::is_same_v
@@ -80,7 +80,7 @@ template <typename... Types> class promise {
   // the promise.
   struct data {
     // Some of the three states carry data.
-    bbp::variant<
+    dpl::m17::variant<
         // The waiting state includes a list of functions to be called when
         // fulfilment or rejection occurs.
         std::vector<std::pair<std::function<void(Types...)>,
@@ -117,7 +117,7 @@ public:
     // reject, keeps its own shared pointer to 'd_data'.
     auto fulfil = [d_data = this->d_data](Types... fulfillValues) noexcept {
       // Call all the waiting functions with the fulfill values.
-      for (auto &&pf : bbp::get<waiting_state>(d_data->d_state))
+      for (auto &&pf : dpl::m17::get<waiting_state>(d_data->d_state))
         pf.first(fulfillValues...);
 
       // Move to the fulfilled state
@@ -127,7 +127,7 @@ public:
 
     auto reject = [d_data = this->d_data](std::exception_ptr e) noexcept {
       // Call all the waiting functions with the exception.
-      for (auto &&pf : bbp::get<waiting_state>(d_data->d_state))
+      for (auto &&pf : dpl::m17::get<waiting_state>(d_data->d_state))
         pf.second(e);
 
       // Move to the rejected state
@@ -181,7 +181,7 @@ public:
     if (std::vector<std::pair<std::function<void(Types...)>,
                               std::function<void(std::exception_ptr)>>>
             *const waitingFunctions =
-                bbp::get_if<waiting_state>(d_data->d_state)) {
+                dpl::m17::get_if<waiting_state>(d_data->d_state)) {
       return promise<>([
         waitingFunctions, fulfilledCont = std::move(fulfilledCont),
         rejectedCont = std::move(rejectedCont)
@@ -207,7 +207,7 @@ public:
             });
       });
     } else if (std::tuple<Types...> const *const fulfilledValues =
-                   bbp::get_if<fulfilled_state>(d_data->d_state)) {
+                   dpl::m17::get_if<fulfilled_state>(d_data->d_state)) {
       return promise<>([
         fulfilledValues, fulfilledCont = std::move(fulfilledCont)
       ](auto fulfill, auto reject) mutable {
@@ -220,7 +220,7 @@ public:
       });
     } else {
       const std::exception_ptr &rejectedException =
-          bbp::get<rejected_state>(d_data->d_state);
+          dpl::m17::get<rejected_state>(d_data->d_state);
       return promise<>([
         &rejectedException, rejectedCont = std::move(rejectedCont)
       ](auto fulfill, auto reject) mutable {
@@ -242,7 +242,7 @@ public:
     if (std::vector<std::pair<std::function<void(Types...)>,
                               std::function<void(std::exception_ptr)>>>
             *const waitingFunctions =
-                bbp::get_if<waiting_state>(d_data->d_state)) {
+                dpl::m17::get_if<waiting_state>(d_data->d_state)) {
       return promise<>([
         waitingFunctions, fulfilledCont = std::move(fulfilledCont)
       ](auto fulfill, auto reject) mutable {
@@ -259,7 +259,7 @@ public:
             [reject](std::exception_ptr e) { reject(e); });
       });
     } else if (std::tuple<Types...> const *const fulfilledValues =
-                   bbp::get_if<fulfilled_state>(d_data->d_state)) {
+                   dpl::m17::get_if<fulfilled_state>(d_data->d_state)) {
       return promise<>([
         fulfilledValues, fulfilledCont = std::move(fulfilledCont)
       ](auto fulfill, auto reject) mutable {
@@ -272,7 +272,7 @@ public:
       });
     } else {
       const std::exception_ptr &rejectedException =
-          bbp::get<rejected_state>(d_data->d_state);
+          dpl::m17::get<rejected_state>(d_data->d_state);
       return promise<>([&rejectedException](auto fulfill, auto reject) {
         reject(rejectedException);
       });
@@ -298,7 +298,7 @@ public:
     if (std::vector<std::pair<std::function<void(Types...)>,
                               std::function<void(std::exception_ptr)>>>
             *const waitingFunctions =
-                bbp::get_if<waiting_state>(d_data->d_state)) {
+                dpl::m17::get_if<waiting_state>(d_data->d_state)) {
       return Result([
         waitingFunctions, fulfilledCont = std::move(fulfilledCont),
         rejectedCont = std::move(rejectedCont)
@@ -323,7 +323,7 @@ public:
             });
       });
     } else if (std::tuple<Types...> const *const fulfilledValues =
-                   bbp::get_if<fulfilled_state>(d_data->d_state)) {
+                   dpl::m17::get_if<fulfilled_state>(d_data->d_state)) {
       return Result([
         fulfilledValues, fulfilledCont = std::move(fulfilledCont)
       ](auto fulfill, auto reject) mutable {
@@ -337,7 +337,7 @@ public:
       });
     } else {
       const std::exception_ptr &rejectedException =
-          bbp::get<rejected_state>(d_data->d_state);
+          dpl::m17::get<rejected_state>(d_data->d_state);
       return Result([
         &rejectedException, rejectedCont = std::move(rejectedCont)
       ](auto fulfill, auto reject) mutable {
@@ -363,7 +363,7 @@ public:
     if (std::vector<std::pair<std::function<void(Types...)>,
                               std::function<void(std::exception_ptr)>>>
             *const waitingFunctions =
-                bbp::get_if<waiting_state>(d_data->d_state)) {
+                dpl::m17::get_if<waiting_state>(d_data->d_state)) {
       return Result([
         waitingFunctions, fulfilledCont = std::move(fulfilledCont)
       ](auto fulfill, auto reject) mutable {
@@ -380,7 +380,7 @@ public:
             [reject](std::exception_ptr e) { reject(e); });
       });
     } else if (std::tuple<Types...> const *const fulfilledValues =
-                   bbp::get_if<fulfilled_state>(d_data->d_state)) {
+                   dpl::m17::get_if<fulfilled_state>(d_data->d_state)) {
       return Result([
         fulfilledValues, fulfilledCont = std::move(fulfilledCont)
       ](auto fulfill, auto reject) mutable {
@@ -394,7 +394,7 @@ public:
       });
     } else {
       const std::exception_ptr &rejectedException =
-          bbp::get<rejected_state>(d_data->d_state);
+          dpl::m17::get<rejected_state>(d_data->d_state);
       return Result([&rejectedException](auto fulfill, auto reject) mutable {
         reject(rejectedException);
       });
@@ -419,7 +419,7 @@ public:
     if (std::vector<std::pair<std::function<void(Types...)>,
                               std::function<void(std::exception_ptr)>>>
             *const waitingFunctions =
-                bbp::get_if<waiting_state>(d_data->d_state)) {
+                dpl::m17::get_if<waiting_state>(d_data->d_state)) {
       // Build a promise that is fulfilled or rejected based on an inner
       // promise.
       return Result([
@@ -432,17 +432,17 @@ public:
               try {
                 Result innerPromise = std::move(fulfilledCont)(t...);
 
-                if (auto *const waitingFunctions = bbp::get_if<waiting_state>(
+                if (auto *const waitingFunctions = dpl::m17::get_if<waiting_state>(
                         innerPromise.d_data->d_state)) {
                   waitingFunctions->emplace_back(fulfill, reject);
                 } else if (auto const *const fulfilledValues =
-                               bbp::get_if<fulfilled_state>(
+                               dpl::m17::get_if<fulfilled_state>(
                                    innerPromise.d_data->d_state)) {
                   std::experimental::apply(std::move(fulfill),
                                            (*fulfilledValues));
                 } else {
                   const std::exception_ptr &rejectedException =
-                      bbp::get<rejected_state>(innerPromise.d_data->d_state);
+                      dpl::m17::get<rejected_state>(innerPromise.d_data->d_state);
                   reject(rejectedException);
                 }
               } catch (...) {
@@ -454,17 +454,17 @@ public:
               try {
                 Result innerPromise = std::move(rejectedCont)(e);
 
-                if (auto *const waitingFunctions = bbp::get_if<waiting_state>(
+                if (auto *const waitingFunctions = dpl::m17::get_if<waiting_state>(
                         innerPromise.d_data->d_state)) {
                   waitingFunctions->emplace_back(fulfill, reject);
                 } else if (auto const *const fulfilledValues =
-                               bbp::get_if<fulfilled_state>(
+                               dpl::m17::get_if<fulfilled_state>(
                                    innerPromise.d_data->d_state)) {
                   std::experimental::apply(std::move(fulfill),
                                            (*fulfilledValues));
                 } else {
                   const std::exception_ptr &rejectedException =
-                      bbp::get<rejected_state>(innerPromise.d_data->d_state);
+                      dpl::m17::get<rejected_state>(innerPromise.d_data->d_state);
                   reject(rejectedException);
                 }
               } catch (...) {
@@ -473,12 +473,12 @@ public:
             });
       });
     } else if (std::tuple<Types...> const *const fulfilledValues =
-                   bbp::get_if<fulfilled_state>(d_data->d_state)) {
+                   dpl::m17::get_if<fulfilled_state>(d_data->d_state)) {
       return std::experimental::apply(std::move(fulfilledCont),
                                       (*fulfilledValues));
     } else {
       const std::exception_ptr &rejectedException =
-          bbp::get<rejected_state>(d_data->d_state);
+          dpl::m17::get<rejected_state>(d_data->d_state);
       return rejectedCont(rejectedException);
     }
   }
@@ -494,7 +494,7 @@ public:
     if (std::vector<std::pair<std::function<void(Types...)>,
                               std::function<void(std::exception_ptr)>>>
             *const waitingFunctions =
-                bbp::get_if<waiting_state>(d_data->d_state)) {
+                dpl::m17::get_if<waiting_state>(d_data->d_state)) {
       // Build a promise that is fulfilled or rejected based on an inner
       // promise.
       return Result([
@@ -506,17 +506,17 @@ public:
               try {
                 Result innerPromise = std::move(fulfilledCont)(t...);
 
-                if (auto *const waitingFunctions = bbp::get_if<waiting_state>(
+                if (auto *const waitingFunctions = dpl::m17::get_if<waiting_state>(
                         innerPromise.d_data->d_state)) {
                   waitingFunctions->emplace_back(fulfill, reject);
                 } else if (auto const *const fulfilledValues =
-                               bbp::get_if<fulfilled_state>(
+                               dpl::m17::get_if<fulfilled_state>(
                                    innerPromise.d_data->d_state)) {
                   std::experimental::apply(std::move(fulfill),
                                            (*fulfilledValues));
                 } else {
                   const std::exception_ptr &rejectedException =
-                      bbp::get<rejected_state>(innerPromise.d_data->d_state);
+                      dpl::m17::get<rejected_state>(innerPromise.d_data->d_state);
                   reject(rejectedException);
                 }
               } catch (...) {
@@ -526,12 +526,12 @@ public:
             [reject](std::exception_ptr e) { reject(e); });
       });
     } else if (std::tuple<Types...> const *const fulfilledValues =
-                   bbp::get_if<fulfilled_state>(d_data->d_state)) {
+                   dpl::m17::get_if<fulfilled_state>(d_data->d_state)) {
       return std::experimental::apply(std::move(fulfilledCont),
                                       (*fulfilledValues));
     } else {
       const std::exception_ptr &rejectedException =
-          bbp::get<rejected_state>(d_data->d_state);
+          dpl::m17::get<rejected_state>(d_data->d_state);
       return Result([&rejectedException](auto fulfill, auto reject) mutable {
         reject(rejectedException);
       });
@@ -563,7 +563,7 @@ public:
     if (std::vector<std::pair<std::function<void(Types...)>,
                               std::function<void(std::exception_ptr)>>>
             *const waitingFunctions =
-                bbp::get_if<waiting_state>(d_data->d_state)) {
+                dpl::m17::get_if<waiting_state>(d_data->d_state)) {
       return promise<U>([
         waitingFunctions, fulfilledCont = std::move(fulfilledCont),
         rejectedCont = std::move(rejectedCont)
@@ -587,7 +587,7 @@ public:
             });
       });
     } else if (std::tuple<Types...> const *const fulfilledValues =
-                   bbp::get_if<fulfilled_state>(d_data->d_state)) {
+                   dpl::m17::get_if<fulfilled_state>(d_data->d_state)) {
       return promise<U>([
         fulfilledValues, fulfilledCont = std::move(fulfilledCont)
       ](auto fulfill, auto reject) mutable {
@@ -600,7 +600,7 @@ public:
       });
     } else {
       const std::exception_ptr &rejectedException =
-          bbp::get<rejected_state>(d_data->d_state);
+          dpl::m17::get<rejected_state>(d_data->d_state);
       return promise<U>([
         &rejectedException, rejectedCont = std::move(rejectedCont)
       ](auto fulfill, auto reject) mutable {
@@ -631,7 +631,7 @@ public:
     if (std::vector<std::pair<std::function<void(Types...)>,
                               std::function<void(std::exception_ptr)>>>
             *const waitingFunctions =
-                bbp::get_if<waiting_state>(d_data->d_state)) {
+                dpl::m17::get_if<waiting_state>(d_data->d_state)) {
       return promise<U>([
         waitingFunctions, fulfilledCont = std::move(fulfilledCont)
       ](auto fulfill, auto reject) mutable {
@@ -647,7 +647,7 @@ public:
             [reject](std::exception_ptr e) { reject(e); });
       });
     } else if (std::tuple<Types...> const *const fulfilledValues =
-                   bbp::get_if<fulfilled_state>(d_data->d_state)) {
+                   dpl::m17::get_if<fulfilled_state>(d_data->d_state)) {
       return promise<U>([
         fulfilledValues, fulfilledCont = std::move(fulfilledCont)
       ](auto fulfill, auto reject) mutable {
@@ -660,7 +660,7 @@ public:
       });
     } else {
       const std::exception_ptr &rejectedException =
-          bbp::get<rejected_state>(d_data->d_state);
+          dpl::m17::get<rejected_state>(d_data->d_state);
       return promise<U>([&rejectedException](
           auto fulfill, auto reject) mutable { reject(rejectedException); });
     }

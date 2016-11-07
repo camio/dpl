@@ -4,12 +4,11 @@
 
 Files:
 
-- **bbp/promise.h**. Contains the `bbp::promise` class.
-- **bbp/promise.t.cpp**. Test driver for the above component. Uses `gtest`.
-- **bbp/variant.h**. A copy of Anthony Williams's 'std::variant' implementation
-  put in the `bbp` namespace.
-- **bbp/ranges_concepts.h**. Some concepts from the Ranges TS that were pulled
-  and modified.
+- **dpl/bbp/promise.h**. Contains the `bbp::promise` class.
+- **dpl/bbp/promise.t.cpp**. Test driver for the above component. Uses
+  `gtest`.
+- **dpl/bbp/ranges_concepts.h**. Some concepts from the Ranges TS that were
+  pulled and modified.
 
 Promises are intended to be used as the result of asynchronous operations and
 can be chained together in various ways. It is modeled after the JavaScript

@@ -1,4 +1,5 @@
 #include <dpl/bbp/promise.h>
+#include <dpl/m17/variant.h>
 #include <gtest/gtest.h>
 #include <string>
 
@@ -35,11 +36,11 @@ TEST(dpl_bbp_promise, then_two_arg) {
   ps.then(
       [&](auto s) {
         result = s;
-        return dpl::bbp::monostate();
+        return dpl::m17::monostate();
       },
       [&](auto e) {
         result = "error";
-        return dpl::bbp::monostate();
+        return dpl::m17::monostate();
       });
   EXPECT_EQ(result, "3") << "The then function wasn't called.";
 
@@ -47,16 +48,16 @@ TEST(dpl_bbp_promise, then_two_arg) {
   ps.then(
         [&](auto s) {
           throw std::runtime_error("error");
-          return dpl::bbp::monostate();
+          return dpl::m17::monostate();
         },
         [&](auto e) {
           result = "error";
-          return dpl::bbp::monostate();
+          return dpl::m17::monostate();
         })
       .then(
           [&](auto s) {
             result = "value";
-            return dpl::bbp::monostate();
+            return dpl::m17::monostate();
           },
           [&](std::exception_ptr e) {
             result = "expected_error";
@@ -67,7 +68,7 @@ TEST(dpl_bbp_promise, then_two_arg) {
             } catch (...) {
               ADD_FAILURE() << "Unexpected exception thrown.";
             }
-            return dpl::bbp::monostate();
+            return dpl::m17::monostate();
           });
   EXPECT_EQ(result, "expected_error") << "Error handling didn't happen.";
 }
@@ -80,20 +81,20 @@ TEST(dpl_bbp_promise, then_one_arg) {
       return std::string(std::to_string(i));
     }).then([&](auto s) {
     result = s;
-    return dpl::bbp::monostate();
+    return dpl::m17::monostate();
   });
   EXPECT_EQ(result, "3") << "The then function wasn't called.";
 
   result = "";
-  dpl::bbp::promise<dpl::bbp::monostate>(
-      [](auto fulfill, auto reject) { fulfill(dpl::bbp::monostate()); })
-      .then([](dpl::bbp::monostate) -> dpl::bbp::monostate {
+  dpl::bbp::promise<dpl::m17::monostate>(
+      [](auto fulfill, auto reject) { fulfill(dpl::m17::monostate()); })
+      .then([](dpl::m17::monostate) -> dpl::m17::monostate {
         throw std::runtime_error("exception");
       })
       .then(
           [&](auto s) {
             result = "value";
-            return dpl::bbp::monostate();
+            return dpl::m17::monostate();
           },
           [&](std::exception_ptr e) {
             result = "expected_error";
@@ -104,7 +105,7 @@ TEST(dpl_bbp_promise, then_one_arg) {
             } catch (...) {
               ADD_FAILURE() << "Unexpected exception thrown.";
             }
-            return dpl::bbp::monostate();
+            return dpl::m17::monostate();
           });
   EXPECT_EQ(result, "expected_error") << "Error handling didn't happen.";
 }
