@@ -7,9 +7,9 @@ endif()
 
 find_package(GTest REQUIRED)
 
-add_library(dpl_bbp INTERFACE)
-target_include_directories(dpl_bbp INTERFACE ${CMAKE_CURRENT_SOURCE_DIR}/../../)
-target_link_libraries(dpl_bbp INTERFACE dpl_m17)
+add_library(dpl_bbp promise.cpp)
+target_include_directories(dpl_bbp PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/../../)
+target_link_libraries(dpl_bbp PUBLIC dpl_m17)
 
 add_executable(dpl_bbp_promise.t promise.t.cpp)
 target_link_libraries(dpl_bbp_promise.t dpl_bbp dpl_m17 GTest::GTest)
