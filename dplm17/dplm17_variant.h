@@ -50,8 +50,7 @@
 #pragma warning(disable:4522)
 #endif
 
-namespace dpl{
-namespace m17{
+namespace dplm17 {
 
 struct __in_place_private{
     template<typename>
@@ -2209,26 +2208,25 @@ struct __hash_visitor{
 };
 
 }
-}
 
 namespace std {
 template<>
-struct hash<dpl::m17::monostate>{
-    size_t operator()(dpl::m17::monostate) noexcept{
+struct hash<dplm17::monostate>{
+    size_t operator()(dplm17::monostate) noexcept{
         return 42;
     }
 };
 
 template<typename ... _Types>
-struct hash<dpl::m17::variant<_Types...>>{
-    size_t operator()(dpl::m17::variant<_Types...> const &v) noexcept {
+struct hash<dplm17::variant<_Types...>>{
+    size_t operator()(dplm17::variant<_Types...> const &v) noexcept {
         return std::hash<ptrdiff_t>()(v.index()) ^
-               dpl::m17::visit(dpl::m17::__hash_visitor(), v);
+               dplm17::visit(dplm17::__hash_visitor(), v);
     }
 };
 
 template<typename ... _Args,typename _Alloc>
-struct uses_allocator<dpl::m17::variant<_Args...>,_Alloc>:
+struct uses_allocator<dplm17::variant<_Args...>,_Alloc>:
     true_type{};
 }
 
