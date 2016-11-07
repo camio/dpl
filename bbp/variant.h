@@ -50,6 +50,7 @@
 #pragma warning(disable:4522)
 #endif
 
+namespace dpl{
 namespace bbp{
 
 struct __in_place_private{
@@ -2208,25 +2209,26 @@ struct __hash_visitor{
 };
 
 }
+}
 
 namespace std {
 template<>
-struct hash<bbp::monostate>{
-    size_t operator()(bbp::monostate) noexcept{
+struct hash<dpl::bbp::monostate>{
+    size_t operator()(dpl::bbp::monostate) noexcept{
         return 42;
     }
 };
 
 template<typename ... _Types>
-struct hash<bbp::variant<_Types...>>{
-    size_t operator()(bbp::variant<_Types...> const &v) noexcept {
+struct hash<dpl::bbp::variant<_Types...>>{
+    size_t operator()(dpl::bbp::variant<_Types...> const &v) noexcept {
         return std::hash<ptrdiff_t>()(v.index()) ^
-               bbp::visit(bbp::__hash_visitor(), v);
+               dpl::bbp::visit(dpl::bbp::__hash_visitor(), v);
     }
 };
 
 template<typename ... _Args,typename _Alloc>
-struct uses_allocator<bbp::variant<_Args...>,_Alloc>:
+struct uses_allocator<dpl::bbp::variant<_Args...>,_Alloc>:
     true_type{};
 }
 

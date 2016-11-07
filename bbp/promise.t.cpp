@@ -1,33 +1,33 @@
-#include <bbp/promise.h>
+#include <dpl/bbp/promise.h>
 #include <gtest/gtest.h>
 #include <string>
 
-TEST(bbp_promise, basic) {
-  bbp::promise<int> p([](auto fulfill, auto reject) { fulfill(3); });
+TEST(dpl_bbp_promise, basic) {
+  dpl::bbp::promise<int> p([](auto fulfill, auto reject) { fulfill(3); });
 }
 
-TEST(bbp_promise, empty_promise) {
-  bbp::promise<> p([](auto fulfill, auto reject) { fulfill(); });
+TEST(dpl_bbp_promise, empty_promise) {
+  dpl::bbp::promise<> p([](auto fulfill, auto reject) { fulfill(); });
 }
 
 // Check that when the then function has a 'void' return, then the
 // corresponding promise is an empty promise.
-TEST(bbp_promise, void_then) {
-  bbp::promise<> foo = bbp::promise<>([](auto fulfill, auto reject) {
+TEST(dpl_bbp_promise, void_then) {
+  dpl::bbp::promise<> foo = dpl::bbp::promise<>([](auto fulfill, auto reject) {
                          fulfill();
                        }).then([]() {});
 
-  bbp::promise<> bar = bbp::promise<int>([](auto fulfill, auto reject) {
+  dpl::bbp::promise<> bar = dpl::bbp::promise<int>([](auto fulfill, auto reject) {
                          fulfill(3);
                        }).then([](int) {}, [](std::exception_ptr) {});
 }
 
-TEST(bbp_promise, then_two_arg) {
+TEST(dpl_bbp_promise, then_two_arg) {
   //  Note the error message here. Concepts doesn't help.
-  //  bbp::promise<int> q([](auto fulfill, auto reject) { fulfill("33"); });
+  //  dpl::bbp::promise<int> q([](auto fulfill, auto reject) { fulfill("33"); });
 
-  bbp::promise<std::string> ps =
-      bbp::promise<int>([](auto fulfill, auto reject) { fulfill(3); })
+  dpl::bbp::promise<std::string> ps =
+      dpl::bbp::promise<int>([](auto fulfill, auto reject) { fulfill(3); })
           .then([](int i) { return std::string(std::to_string(i)); },
                 [](std::exception_ptr) { return std::string("error"); });
 
@@ -35,11 +35,11 @@ TEST(bbp_promise, then_two_arg) {
   ps.then(
       [&](auto s) {
         result = s;
-        return bbp::monostate();
+        return dpl::bbp::monostate();
       },
       [&](auto e) {
         result = "error";
-        return bbp::monostate();
+        return dpl::bbp::monostate();
       });
   EXPECT_EQ(result, "3") << "The then function wasn't called.";
 
@@ -47,16 +47,16 @@ TEST(bbp_promise, then_two_arg) {
   ps.then(
         [&](auto s) {
           throw std::runtime_error("error");
-          return bbp::monostate();
+          return dpl::bbp::monostate();
         },
         [&](auto e) {
           result = "error";
-          return bbp::monostate();
+          return dpl::bbp::monostate();
         })
       .then(
           [&](auto s) {
             result = "value";
-            return bbp::monostate();
+            return dpl::bbp::monostate();
           },
           [&](std::exception_ptr e) {
             result = "expected_error";
@@ -67,33 +67,33 @@ TEST(bbp_promise, then_two_arg) {
             } catch (...) {
               ADD_FAILURE() << "Unexpected exception thrown.";
             }
-            return bbp::monostate();
+            return dpl::bbp::monostate();
           });
   EXPECT_EQ(result, "expected_error") << "Error handling didn't happen.";
 }
 
-TEST(bbp_promise, then_one_arg) {
+TEST(dpl_bbp_promise, then_one_arg) {
   std::string result;
-  bbp::promise<int>([](auto fulfill, auto reject) {
+  dpl::bbp::promise<int>([](auto fulfill, auto reject) {
     fulfill(3);
   }).then([](int i) {
       return std::string(std::to_string(i));
     }).then([&](auto s) {
     result = s;
-    return bbp::monostate();
+    return dpl::bbp::monostate();
   });
   EXPECT_EQ(result, "3") << "The then function wasn't called.";
 
   result = "";
-  bbp::promise<bbp::monostate>(
-      [](auto fulfill, auto reject) { fulfill(bbp::monostate()); })
-      .then([](bbp::monostate) -> bbp::monostate {
+  dpl::bbp::promise<dpl::bbp::monostate>(
+      [](auto fulfill, auto reject) { fulfill(dpl::bbp::monostate()); })
+      .then([](dpl::bbp::monostate) -> dpl::bbp::monostate {
         throw std::runtime_error("exception");
       })
       .then(
           [&](auto s) {
             result = "value";
-            return bbp::monostate();
+            return dpl::bbp::monostate();
           },
           [&](std::exception_ptr e) {
             result = "expected_error";
@@ -104,13 +104,13 @@ TEST(bbp_promise, then_one_arg) {
             } catch (...) {
               ADD_FAILURE() << "Unexpected exception thrown.";
             }
-            return bbp::monostate();
+            return dpl::bbp::monostate();
           });
   EXPECT_EQ(result, "expected_error") << "Error handling didn't happen.";
 }
 
-TEST(bbp_promise, fulfill) {
-  bbp::promise<int, double> p = bbp::promise<>::fulfill(3, 2.5);
+TEST(dpl_bbp_promise, fulfill) {
+  dpl::bbp::promise<int, double> p = dpl::bbp::promise<>::fulfill(3, 2.5);
 
   bool fulfilled = false;
   p.then([&fulfilled](int i, double d) {
@@ -121,7 +121,7 @@ TEST(bbp_promise, fulfill) {
   EXPECT_TRUE(fulfilled) << "Promise wasn't fulfilled.";
 }
 
-TEST(bbp_promise, reject) {
+TEST(dpl_bbp_promise, reject) {
   std::exception_ptr error;
   try {
     throw std::runtime_error("test");
@@ -129,7 +129,7 @@ TEST(bbp_promise, reject) {
     error = std::current_exception();
   }
 
-  bbp::promise<int, double> p = bbp::promise<>::reject<int, double>(error);
+  dpl::bbp::promise<int, double> p = dpl::bbp::promise<>::reject<int, double>(error);
 
   bool rejected = false;
   p.then([](int i, double d) { ADD_FAILURE() << "Unexpected fulfillment."; },
@@ -140,11 +140,11 @@ TEST(bbp_promise, reject) {
   EXPECT_TRUE(rejected) << "Promise wasn't rejected.";
 }
 
-TEST(bbp_promise, then_promise_promise) {
-  bbp::promise<> p = bbp::promise<>::fulfill();
+TEST(dpl_bbp_promise, then_promise_promise) {
+  dpl::bbp::promise<> p = dpl::bbp::promise<>::fulfill();
 
   {
-    bbp::promise<int> p2 = p.then([] { return bbp::promise<>::fulfill(3); });
+    dpl::bbp::promise<int> p2 = p.then([] { return dpl::bbp::promise<>::fulfill(3); });
 
     bool fulfilled = false;
     p2.then([&fulfilled](int i) {
@@ -155,9 +155,9 @@ TEST(bbp_promise, then_promise_promise) {
   }
 
   {
-    bbp::promise<int> p2 =
-        p.then([] { return bbp::promise<>::fulfill(4); },
-               [](std::exception_ptr e) { return bbp::promise<>::fulfill(2); });
+    dpl::bbp::promise<int> p2 =
+        p.then([] { return dpl::bbp::promise<>::fulfill(4); },
+               [](std::exception_ptr e) { return dpl::bbp::promise<>::fulfill(2); });
 
     bool fulfilled = false;
     p2.then([&fulfilled](int i) {
@@ -168,11 +168,11 @@ TEST(bbp_promise, then_promise_promise) {
   }
 }
 
-TEST(bbp_promise, then_tuple) {
-  bbp::promise<> p = bbp::promise<>::fulfill();
+TEST(dpl_bbp_promise, then_tuple) {
+  dpl::bbp::promise<> p = dpl::bbp::promise<>::fulfill();
 
   {
-    bbp::promise<int, std::string> p2 =
+    dpl::bbp::promise<int, std::string> p2 =
         p.then([] { return std::make_tuple(3, std::string("test")); });
 
     bool fulfilled = false;
@@ -184,7 +184,7 @@ TEST(bbp_promise, then_tuple) {
     EXPECT_TRUE(fulfilled) << "Promise wasn't fulfilled.";
   }
   {
-    bbp::promise<int, std::string> p2 =
+    dpl::bbp::promise<int, std::string> p2 =
         p.then([] { return std::make_tuple(3, std::string("test")); },
                [](std::exception_ptr e) {
                 ADD_FAILURE() << "Unexpected exception thrown.";
