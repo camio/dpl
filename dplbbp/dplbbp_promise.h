@@ -111,30 +111,7 @@ public:
   // Note that neither the reject nor resolve functions need be called from
   // within 'resolver'. 'resolver' could, for example, store these functions
   // elsewhere to be called at a later time.
-  promise(Resolver<Types...> resolver) : d_data(std::make_shared<data>()) {
-    // Set 'fulfil' to the fulfilment function. Note that it, as well as
-    // reject, keeps its own shared pointer to 'd_data'.
-    auto fulfil = [d_data = this->d_data](Types... fulfillValues) noexcept {
-      // Call all the waiting functions with the fulfill values.
-      for (auto &&pf : dplm17::get<waiting_state>(d_data->d_state))
-        pf.first(fulfillValues...);
-
-      // Move to the fulfilled state
-      d_data->d_state.template emplace<fulfilled_state>(
-          std::move(fulfillValues)...);
-    };
-
-    auto reject = [d_data = this->d_data](std::exception_ptr e) noexcept {
-      // Call all the waiting functions with the exception.
-      for (auto &&pf : dplm17::get<waiting_state>(d_data->d_state))
-        pf.second(e);
-
-      // Move to the rejected state
-      d_data->d_state.template emplace<rejected_state>(std::move(e));
-    };
-
-    resolver(std::move(fulfil), std::move(reject));
-  }
+  promise(Resolver<Types...> resolver);
 
   // Return a new promise that, upon the fulfilment of this promise, will be
   // fulfilled with the result of the specified 'fulfilledCont' function or,
@@ -176,107 +153,13 @@ public:
       // 'fulfilledCont' and 'rejectedCont' have matching return values
       std::experimental::is_same_v<
           std::result_of_t<FulfilledCont(Types...)>,
-          std::result_of_t<RejectedCont(std::exception_ptr)>> {
-    if (std::vector<std::pair<std::function<void(Types...)>,
-                              std::function<void(std::exception_ptr)>>>
-            *const waitingFunctions =
-                dplm17::get_if<waiting_state>(d_data->d_state)) {
-      return promise<>([
-        waitingFunctions, fulfilledCont = std::move(fulfilledCont),
-        rejectedCont = std::move(rejectedCont)
-      ](auto fulfill, auto reject) mutable {
-        waitingFunctions->emplace_back(
-            [ fulfilledCont = std::move(fulfilledCont), fulfill,
-              reject ](Types... t) mutable {
-              try {
-                std::move(fulfilledCont)(t...);
-                fulfill();
-              } catch (...) {
-                reject(std::current_exception());
-              }
-            },
-            [ rejectedCont = std::move(rejectedCont), fulfill,
-              reject ](std::exception_ptr e) mutable {
-              try {
-                std::move(rejectedCont)(e);
-                fulfill();
-              } catch (...) {
-                reject(std::current_exception());
-              }
-            });
-      });
-    } else if (std::tuple<Types...> const *const fulfilledValues =
-                   dplm17::get_if<fulfilled_state>(d_data->d_state)) {
-      return promise<>([
-        fulfilledValues, fulfilledCont = std::move(fulfilledCont)
-      ](auto fulfill, auto reject) mutable {
-        try {
-          std::experimental::apply(std::move(fulfilledCont), *fulfilledValues);
-          fulfill();
-        } catch (...) {
-          reject(std::current_exception());
-        }
-      });
-    } else {
-      const std::exception_ptr &rejectedException =
-          dplm17::get<rejected_state>(d_data->d_state);
-      return promise<>([
-        &rejectedException, rejectedCont = std::move(rejectedCont)
-      ](auto fulfill, auto reject) mutable {
-        try {
-          std::move(rejectedCont)(rejectedException);
-          fulfill();
-        } catch (...) {
-          reject(std::current_exception());
-        }
-      });
-    }
-  }
+          std::result_of_t<RejectedCont(std::exception_ptr)>>;
 
   template <Callable<Types...> FulfilledCont>
   promise<> then(FulfilledCont fulfilledCont) // One-argument version of case #1
       requires
       // void return type
-      std::experimental::is_void_v<std::result_of_t<FulfilledCont(Types...)>> {
-    if (std::vector<std::pair<std::function<void(Types...)>,
-                              std::function<void(std::exception_ptr)>>>
-            *const waitingFunctions =
-                dplm17::get_if<waiting_state>(d_data->d_state)) {
-      return promise<>([
-        waitingFunctions, fulfilledCont = std::move(fulfilledCont)
-      ](auto fulfill, auto reject) mutable {
-        waitingFunctions->emplace_back(
-            [ fulfilledCont = std::move(fulfilledCont), fulfill,
-              reject ](Types... t) {
-              try {
-                std::move(fulfilledCont)(t...);
-                fulfill();
-              } catch (...) {
-                reject(std::current_exception());
-              }
-            },
-            [reject](std::exception_ptr e) { reject(e); });
-      });
-    } else if (std::tuple<Types...> const *const fulfilledValues =
-                   dplm17::get_if<fulfilled_state>(d_data->d_state)) {
-      return promise<>([
-        fulfilledValues, fulfilledCont = std::move(fulfilledCont)
-      ](auto fulfill, auto reject) mutable {
-        try {
-          std::experimental::apply(std::move(fulfilledCont), *fulfilledValues);
-          fulfill();
-        } catch (...) {
-          reject(std::current_exception());
-        }
-      });
-    } else {
-      const std::exception_ptr &rejectedException =
-          dplm17::get<rejected_state>(d_data->d_state);
-      return promise<>([&rejectedException](auto fulfill, auto reject) {
-        reject(rejectedException);
-      });
-    }
-  }
+      std::experimental::is_void_v<std::result_of_t<FulfilledCont(Types...)>>;
 
   template <Callable<Types...> FulfilledCont,
             Callable<std::exception_ptr> RejectedCont>
@@ -290,115 +173,14 @@ public:
       // 'fulfilledCont' and 'rejectedCont' have matching return values
       std::experimental::is_same_v<
           std::result_of_t<FulfilledCont(Types...)>,
-          std::result_of_t<RejectedCont(std::exception_ptr)>> {
-    using Result =
-        PromiseFromTuple_t<std::result_of_t<FulfilledCont(Types...)>>;
-
-    if (std::vector<std::pair<std::function<void(Types...)>,
-                              std::function<void(std::exception_ptr)>>>
-            *const waitingFunctions =
-                dplm17::get_if<waiting_state>(d_data->d_state)) {
-      return Result([
-        waitingFunctions, fulfilledCont = std::move(fulfilledCont),
-        rejectedCont = std::move(rejectedCont)
-      ](auto fulfill, auto reject) mutable {
-        waitingFunctions->emplace_back(
-            [ fulfilledCont = std::move(fulfilledCont), fulfill,
-              reject ](Types... t) mutable {
-              try {
-                std::experimental::apply(fulfill,
-                                         std::move(fulfilledCont)(t...));
-              } catch (...) {
-                reject(std::current_exception());
-              }
-            },
-            [ rejectedCont = std::move(rejectedCont), fulfill,
-              reject ](std::exception_ptr e) mutable {
-              try {
-                std::experimental::apply(fulfill, std::move(rejectedCont)(e));
-              } catch (...) {
-                reject(std::current_exception());
-              }
-            });
-      });
-    } else if (std::tuple<Types...> const *const fulfilledValues =
-                   dplm17::get_if<fulfilled_state>(d_data->d_state)) {
-      return Result([
-        fulfilledValues, fulfilledCont = std::move(fulfilledCont)
-      ](auto fulfill, auto reject) mutable {
-        try {
-          std::experimental::apply(
-              fulfill, std::experimental::apply(std::move(fulfilledCont),
-                                                *fulfilledValues));
-        } catch (...) {
-          reject(std::current_exception());
-        }
-      });
-    } else {
-      const std::exception_ptr &rejectedException =
-          dplm17::get<rejected_state>(d_data->d_state);
-      return Result([
-        &rejectedException, rejectedCont = std::move(rejectedCont)
-      ](auto fulfill, auto reject) mutable {
-        try {
-          std::experimental::apply(fulfill,
-                                   std::move(rejectedCont)(rejectedException));
-        } catch (...) {
-          reject(std::current_exception());
-        }
-      });
-    }
-  }
+          std::result_of_t<RejectedCont(std::exception_ptr)>>;
 
   template <Callable<Types...> FulfilledCont>
   PromiseFromTuple_t<std::result_of_t<FulfilledCont(Types...)>>
   then(FulfilledCont fulfilledCont) // One-argument version of case #2
       requires
       // tuple return type
-      IsTuple<std::result_of_t<FulfilledCont(Types...)>> {
-    using Result =
-        PromiseFromTuple_t<std::result_of_t<FulfilledCont(Types...)>>;
-
-    if (std::vector<std::pair<std::function<void(Types...)>,
-                              std::function<void(std::exception_ptr)>>>
-            *const waitingFunctions =
-                dplm17::get_if<waiting_state>(d_data->d_state)) {
-      return Result([
-        waitingFunctions, fulfilledCont = std::move(fulfilledCont)
-      ](auto fulfill, auto reject) mutable {
-        waitingFunctions->emplace_back(
-            [ fulfilledCont = std::move(fulfilledCont), fulfill,
-              reject ](Types... t) mutable {
-              try {
-                std::experimental::apply(fulfill,
-                                         std::move(fulfilledCont)(t...));
-              } catch (...) {
-                reject(std::current_exception());
-              }
-            },
-            [reject](std::exception_ptr e) { reject(e); });
-      });
-    } else if (std::tuple<Types...> const *const fulfilledValues =
-                   dplm17::get_if<fulfilled_state>(d_data->d_state)) {
-      return Result([
-        fulfilledValues, fulfilledCont = std::move(fulfilledCont)
-      ](auto fulfill, auto reject) mutable {
-        try {
-          std::experimental::apply(
-              fulfill, std::experimental::apply(std::move(fulfilledCont),
-                                                *fulfilledValues));
-        } catch (...) {
-          reject(std::current_exception());
-        }
-      });
-    } else {
-      const std::exception_ptr &rejectedException =
-          dplm17::get<rejected_state>(d_data->d_state);
-      return Result([&rejectedException](auto fulfill, auto reject) mutable {
-        reject(rejectedException);
-      });
-    }
-  }
+      IsTuple<std::result_of_t<FulfilledCont(Types...)>>;
 
   template <Callable<Types...> FulfilledCont,
             Callable<std::exception_ptr> RejectedCont>
@@ -412,130 +194,14 @@ public:
       // 'fulfilledCont' and 'rejectedCont' have matching return values
       std::experimental::is_same_v<
           std::result_of_t<FulfilledCont(Types...)>,
-          std::result_of_t<RejectedCont(std::exception_ptr)>> {
-    using Result = std::result_of_t<FulfilledCont(Types...)>;
-
-    if (std::vector<std::pair<std::function<void(Types...)>,
-                              std::function<void(std::exception_ptr)>>>
-            *const waitingFunctions =
-                dplm17::get_if<waiting_state>(d_data->d_state)) {
-      // Build a promise that is fulfilled or rejected based on an inner
-      // promise.
-      return Result([
-        waitingFunctions, fulfilledCont = std::move(fulfilledCont),
-        rejectedCont = std::move(rejectedCont)
-      ](auto fulfill, auto reject) mutable {
-        waitingFunctions->emplace_back(
-            [ fulfilledCont = std::move(fulfilledCont), fulfill,
-              reject ](Types... t) mutable {
-              try {
-                Result innerPromise = std::move(fulfilledCont)(t...);
-
-                if (auto *const waitingFunctions = dplm17::get_if<waiting_state>(
-                        innerPromise.d_data->d_state)) {
-                  waitingFunctions->emplace_back(fulfill, reject);
-                } else if (auto const *const fulfilledValues =
-                               dplm17::get_if<fulfilled_state>(
-                                   innerPromise.d_data->d_state)) {
-                  std::experimental::apply(std::move(fulfill),
-                                           (*fulfilledValues));
-                } else {
-                  const std::exception_ptr &rejectedException =
-                      dplm17::get<rejected_state>(innerPromise.d_data->d_state);
-                  reject(rejectedException);
-                }
-              } catch (...) {
-                reject(std::current_exception());
-              }
-            },
-            [ rejectedCont = std::move(rejectedCont), fulfill,
-              reject ](const std::exception_ptr &e) {
-              try {
-                Result innerPromise = std::move(rejectedCont)(e);
-
-                if (auto *const waitingFunctions = dplm17::get_if<waiting_state>(
-                        innerPromise.d_data->d_state)) {
-                  waitingFunctions->emplace_back(fulfill, reject);
-                } else if (auto const *const fulfilledValues =
-                               dplm17::get_if<fulfilled_state>(
-                                   innerPromise.d_data->d_state)) {
-                  std::experimental::apply(std::move(fulfill),
-                                           (*fulfilledValues));
-                } else {
-                  const std::exception_ptr &rejectedException =
-                      dplm17::get<rejected_state>(innerPromise.d_data->d_state);
-                  reject(rejectedException);
-                }
-              } catch (...) {
-                reject(std::current_exception());
-              }
-            });
-      });
-    } else if (std::tuple<Types...> const *const fulfilledValues =
-                   dplm17::get_if<fulfilled_state>(d_data->d_state)) {
-      return std::experimental::apply(std::move(fulfilledCont),
-                                      (*fulfilledValues));
-    } else {
-      const std::exception_ptr &rejectedException =
-          dplm17::get<rejected_state>(d_data->d_state);
-      return rejectedCont(rejectedException);
-    }
-  }
+          std::result_of_t<RejectedCont(std::exception_ptr)>>;
 
   template <Callable<Types...> FulfilledCont>
   std::result_of_t<FulfilledCont(Types...)>
   then(FulfilledCont fulfilledCont) // One-argument version of case #3
       requires
       // promise return type
-      IsPromise<std::result_of_t<FulfilledCont(Types...)>> {
-    using Result = std::result_of_t<FulfilledCont(Types...)>;
-
-    if (std::vector<std::pair<std::function<void(Types...)>,
-                              std::function<void(std::exception_ptr)>>>
-            *const waitingFunctions =
-                dplm17::get_if<waiting_state>(d_data->d_state)) {
-      // Build a promise that is fulfilled or rejected based on an inner
-      // promise.
-      return Result([
-        waitingFunctions, fulfilledCont = std::move(fulfilledCont)
-      ](auto fulfill, auto reject) mutable {
-        waitingFunctions->emplace_back(
-            [ fulfilledCont = std::move(fulfilledCont), fulfill,
-              reject ](Types... t) mutable {
-              try {
-                Result innerPromise = std::move(fulfilledCont)(t...);
-
-                if (auto *const waitingFunctions = dplm17::get_if<waiting_state>(
-                        innerPromise.d_data->d_state)) {
-                  waitingFunctions->emplace_back(fulfill, reject);
-                } else if (auto const *const fulfilledValues =
-                               dplm17::get_if<fulfilled_state>(
-                                   innerPromise.d_data->d_state)) {
-                  std::experimental::apply(std::move(fulfill),
-                                           (*fulfilledValues));
-                } else {
-                  const std::exception_ptr &rejectedException =
-                      dplm17::get<rejected_state>(innerPromise.d_data->d_state);
-                  reject(rejectedException);
-                }
-              } catch (...) {
-                reject(std::current_exception());
-              }
-            },
-            [reject](std::exception_ptr e) { reject(e); });
-      });
-    } else if (std::tuple<Types...> const *const fulfilledValues =
-                   dplm17::get_if<fulfilled_state>(d_data->d_state)) {
-      return std::experimental::apply(std::move(fulfilledCont),
-                                      (*fulfilledValues));
-    } else {
-      const std::exception_ptr &rejectedException =
-          dplm17::get<rejected_state>(d_data->d_state);
-      return Result([&rejectedException](auto fulfill, auto reject) mutable {
-        reject(rejectedException);
-      });
-    }
-  }
+      IsPromise<std::result_of_t<FulfilledCont(Types...)>>;
 
   template <Callable<Types...> FulfilledCont,
             Callable<std::exception_ptr> RejectedCont>
@@ -556,61 +222,7 @@ public:
       // 'fulfilledCont' and 'rejectedCont' have matching return values
       std::experimental::is_same_v<
           std::result_of_t<FulfilledCont(Types...)>,
-          std::result_of_t<RejectedCont(std::exception_ptr)>> {
-    using U = std::result_of_t<FulfilledCont(Types...)>;
-
-    if (std::vector<std::pair<std::function<void(Types...)>,
-                              std::function<void(std::exception_ptr)>>>
-            *const waitingFunctions =
-                dplm17::get_if<waiting_state>(d_data->d_state)) {
-      return promise<U>([
-        waitingFunctions, fulfilledCont = std::move(fulfilledCont),
-        rejectedCont = std::move(rejectedCont)
-      ](auto fulfill, auto reject) mutable {
-        waitingFunctions->emplace_back(
-            [ fulfilledCont = std::move(fulfilledCont), fulfill,
-              reject ](Types... t) mutable {
-              try {
-                fulfill(std::move(fulfilledCont)(t...));
-              } catch (...) {
-                reject(std::current_exception());
-              }
-            },
-            [ rejectedCont = std::move(rejectedCont), fulfill,
-              reject ](std::exception_ptr e) mutable {
-              try {
-                fulfill(std::move(rejectedCont)(e));
-              } catch (...) {
-                reject(std::current_exception());
-              }
-            });
-      });
-    } else if (std::tuple<Types...> const *const fulfilledValues =
-                   dplm17::get_if<fulfilled_state>(d_data->d_state)) {
-      return promise<U>([
-        fulfilledValues, fulfilledCont = std::move(fulfilledCont)
-      ](auto fulfill, auto reject) mutable {
-        try {
-          fulfill(std::experimental::apply(std::move(fulfilledCont),
-                                           *fulfilledValues));
-        } catch (...) {
-          reject(std::current_exception());
-        }
-      });
-    } else {
-      const std::exception_ptr &rejectedException =
-          dplm17::get<rejected_state>(d_data->d_state);
-      return promise<U>([
-        &rejectedException, rejectedCont = std::move(rejectedCont)
-      ](auto fulfill, auto reject) mutable {
-        try {
-          fulfill(std::move(rejectedCont)(rejectedException));
-        } catch (...) {
-          reject(std::current_exception());
-        }
-      });
-    }
-  }
+          std::result_of_t<RejectedCont(std::exception_ptr)>>;
 
   template <Callable<Types...> FulfilledCont>
       promise<std::result_of_t<FulfilledCont(Types...)>>
@@ -624,71 +236,582 @@ public:
       !IsTuple<std::result_of_t<FulfilledCont(Types...)>> &&
 
       // non-promise return type
-      !IsPromise<std::result_of_t<FulfilledCont(Types...)>> {
-    using U = std::result_of_t<FulfilledCont(Types...)>;
-
-    if (std::vector<std::pair<std::function<void(Types...)>,
-                              std::function<void(std::exception_ptr)>>>
-            *const waitingFunctions =
-                dplm17::get_if<waiting_state>(d_data->d_state)) {
-      return promise<U>([
-        waitingFunctions, fulfilledCont = std::move(fulfilledCont)
-      ](auto fulfill, auto reject) mutable {
-        waitingFunctions->emplace_back(
-            [ fulfilledCont = std::move(fulfilledCont), fulfill,
-              reject ](Types... t) mutable {
-              try {
-                fulfill(std::move(fulfilledCont)(t...));
-              } catch (...) {
-                reject(std::current_exception());
-              }
-            },
-            [reject](std::exception_ptr e) { reject(e); });
-      });
-    } else if (std::tuple<Types...> const *const fulfilledValues =
-                   dplm17::get_if<fulfilled_state>(d_data->d_state)) {
-      return promise<U>([
-        fulfilledValues, fulfilledCont = std::move(fulfilledCont)
-      ](auto fulfill, auto reject) mutable {
-        try {
-          fulfill(std::experimental::apply(std::move(fulfilledCont),
-                                           *fulfilledValues));
-        } catch (...) {
-          reject(std::current_exception());
-        }
-      });
-    } else {
-      const std::exception_ptr &rejectedException =
-          dplm17::get<rejected_state>(d_data->d_state);
-      return promise<U>([&rejectedException](
-          auto fulfill, auto reject) mutable { reject(rejectedException); });
-    }
-  }
+      !IsPromise<std::result_of_t<FulfilledCont(Types...)>>;
 
   // Return a promise with the specified types that is fulfilled with the
   // specified 'values'.
   template <typename... Types2>
-  static promise<Types2...> fulfill(Types2 &&... values) {
-    promise<Types2...> result;
-    result.d_data->d_state.template emplace<fulfilled_state>(
-        std::move(values)...);
-    return result;
-  }
+  static promise<Types2...> fulfill(Types2 &&... values);
 
   // Return a promise with the specified types that is rejected with the
   // specified 'error'.
   template <typename... Types2>
-  static promise<Types2...> reject(std::exception_ptr error) {
-    promise<Types2...> result;
-    result.d_data->d_state.template emplace<rejected_state>(std::move(error));
-    return result;
-  }
+  static promise<Types2...> reject(std::exception_ptr error);
 
 private:
   // Create a new 'promise' object in the waiting state. It is never
   // fulfilled.
-  promise() : d_data(std::make_shared<data>()) {}
+  promise();
 };
+
+// ============================================================================
+//                                 INLINE DEFINITIONS
+// ============================================================================
+
+template <typename... Types>
+promise<Types...>::promise(Resolver<Types...> resolver) : d_data(std::make_shared<data>())
+{
+  // Set 'fulfil' to the fulfilment function. Note that it, as well as
+  // reject, keeps its own shared pointer to 'd_data'.
+  auto fulfil = [d_data = this->d_data](Types... fulfillValues) noexcept {
+    // Call all the waiting functions with the fulfill values.
+    for (auto &&pf : dplm17::get<waiting_state>(d_data->d_state))
+      pf.first(fulfillValues...);
+
+    // Move to the fulfilled state
+    d_data->d_state.template emplace<fulfilled_state>(
+        std::move(fulfillValues)...);
+  };
+
+  auto reject = [d_data = this->d_data](std::exception_ptr e) noexcept {
+    // Call all the waiting functions with the exception.
+    for (auto &&pf : dplm17::get<waiting_state>(d_data->d_state))
+      pf.second(e);
+
+    // Move to the rejected state
+    d_data->d_state.template emplace<rejected_state>(std::move(e));
+  };
+
+  resolver(std::move(fulfil), std::move(reject));
+}
+
+template <typename... Types>
+template <Callable<Types...> FulfilledCont,
+          Callable<std::exception_ptr> RejectedCont>
+promise<> promise<Types...>::then(FulfilledCont fulfilledCont,
+               RejectedCont rejectedCont) // Two-argument version of case #1
+    requires
+    // void return type
+    std::experimental::is_void_v<std::result_of_t<FulfilledCont(Types...)>> &&
+
+    // 'fulfilledCont' and 'rejectedCont' have matching return values
+    std::experimental::is_same_v<
+        std::result_of_t<FulfilledCont(Types...)>,
+        std::result_of_t<RejectedCont(std::exception_ptr)>> {
+  if (std::vector<std::pair<std::function<void(Types...)>,
+                            std::function<void(std::exception_ptr)>>>
+          *const waitingFunctions =
+              dplm17::get_if<waiting_state>(d_data->d_state)) {
+    return promise<>([
+      waitingFunctions, fulfilledCont = std::move(fulfilledCont),
+      rejectedCont = std::move(rejectedCont)
+    ](auto fulfill, auto reject) mutable {
+      waitingFunctions->emplace_back(
+          [ fulfilledCont = std::move(fulfilledCont), fulfill,
+            reject ](Types... t) mutable {
+            try {
+              std::move(fulfilledCont)(t...);
+              fulfill();
+            } catch (...) {
+              reject(std::current_exception());
+            }
+          },
+          [ rejectedCont = std::move(rejectedCont), fulfill,
+            reject ](std::exception_ptr e) mutable {
+            try {
+              std::move(rejectedCont)(e);
+              fulfill();
+            } catch (...) {
+              reject(std::current_exception());
+            }
+          });
+    });
+  } else if (std::tuple<Types...> const *const fulfilledValues =
+                 dplm17::get_if<fulfilled_state>(d_data->d_state)) {
+    return promise<>([
+      fulfilledValues, fulfilledCont = std::move(fulfilledCont)
+    ](auto fulfill, auto reject) mutable {
+      try {
+        std::experimental::apply(std::move(fulfilledCont), *fulfilledValues);
+        fulfill();
+      } catch (...) {
+        reject(std::current_exception());
+      }
+    });
+  } else {
+    const std::exception_ptr &rejectedException =
+        dplm17::get<rejected_state>(d_data->d_state);
+    return promise<>([
+      &rejectedException, rejectedCont = std::move(rejectedCont)
+    ](auto fulfill, auto reject) mutable {
+      try {
+        std::move(rejectedCont)(rejectedException);
+        fulfill();
+      } catch (...) {
+        reject(std::current_exception());
+      }
+    });
+  }
+}
+
+template <typename... Types>
+template <Callable<Types...> FulfilledCont>
+promise<> promise<Types...>::then(FulfilledCont fulfilledCont) // One-argument version of case #1
+    requires
+    // void return type
+    std::experimental::is_void_v<std::result_of_t<FulfilledCont(Types...)>> {
+  if (std::vector<std::pair<std::function<void(Types...)>,
+                            std::function<void(std::exception_ptr)>>>
+          *const waitingFunctions =
+              dplm17::get_if<waiting_state>(d_data->d_state)) {
+    return promise<>([
+      waitingFunctions, fulfilledCont = std::move(fulfilledCont)
+    ](auto fulfill, auto reject) mutable {
+      waitingFunctions->emplace_back(
+          [ fulfilledCont = std::move(fulfilledCont), fulfill,
+            reject ](Types... t) {
+            try {
+              std::move(fulfilledCont)(t...);
+              fulfill();
+            } catch (...) {
+              reject(std::current_exception());
+            }
+          },
+          [reject](std::exception_ptr e) { reject(e); });
+    });
+  } else if (std::tuple<Types...> const *const fulfilledValues =
+                 dplm17::get_if<fulfilled_state>(d_data->d_state)) {
+    return promise<>([
+      fulfilledValues, fulfilledCont = std::move(fulfilledCont)
+    ](auto fulfill, auto reject) mutable {
+      try {
+        std::experimental::apply(std::move(fulfilledCont), *fulfilledValues);
+        fulfill();
+      } catch (...) {
+        reject(std::current_exception());
+      }
+    });
+  } else {
+    const std::exception_ptr &rejectedException =
+        dplm17::get<rejected_state>(d_data->d_state);
+    return promise<>([&rejectedException](auto fulfill, auto reject) {
+      reject(rejectedException);
+    });
+  }
+}
+
+template <typename... Types>
+template <Callable<Types...> FulfilledCont,
+          Callable<std::exception_ptr> RejectedCont>
+PromiseFromTuple_t<std::result_of_t<FulfilledCont(Types...)>>
+promise<Types...>::then(FulfilledCont fulfilledCont,
+     RejectedCont rejectedCont) // Two-argument version of case #2
+    requires
+    // tuple return type
+    IsTuple<std::result_of_t<FulfilledCont(Types...)>> &&
+
+    // 'fulfilledCont' and 'rejectedCont' have matching return values
+    std::experimental::is_same_v<
+        std::result_of_t<FulfilledCont(Types...)>,
+        std::result_of_t<RejectedCont(std::exception_ptr)>> {
+  using Result =
+      PromiseFromTuple_t<std::result_of_t<FulfilledCont(Types...)>>;
+
+  if (std::vector<std::pair<std::function<void(Types...)>,
+                            std::function<void(std::exception_ptr)>>>
+          *const waitingFunctions =
+              dplm17::get_if<waiting_state>(d_data->d_state)) {
+    return Result([
+      waitingFunctions, fulfilledCont = std::move(fulfilledCont),
+      rejectedCont = std::move(rejectedCont)
+    ](auto fulfill, auto reject) mutable {
+      waitingFunctions->emplace_back(
+          [ fulfilledCont = std::move(fulfilledCont), fulfill,
+            reject ](Types... t) mutable {
+            try {
+              std::experimental::apply(fulfill,
+                                       std::move(fulfilledCont)(t...));
+            } catch (...) {
+              reject(std::current_exception());
+            }
+          },
+          [ rejectedCont = std::move(rejectedCont), fulfill,
+            reject ](std::exception_ptr e) mutable {
+            try {
+              std::experimental::apply(fulfill, std::move(rejectedCont)(e));
+            } catch (...) {
+              reject(std::current_exception());
+            }
+          });
+    });
+  } else if (std::tuple<Types...> const *const fulfilledValues =
+                 dplm17::get_if<fulfilled_state>(d_data->d_state)) {
+    return Result([
+      fulfilledValues, fulfilledCont = std::move(fulfilledCont)
+    ](auto fulfill, auto reject) mutable {
+      try {
+        std::experimental::apply(
+            fulfill, std::experimental::apply(std::move(fulfilledCont),
+                                              *fulfilledValues));
+      } catch (...) {
+        reject(std::current_exception());
+      }
+    });
+  } else {
+    const std::exception_ptr &rejectedException =
+        dplm17::get<rejected_state>(d_data->d_state);
+    return Result([
+      &rejectedException, rejectedCont = std::move(rejectedCont)
+    ](auto fulfill, auto reject) mutable {
+      try {
+        std::experimental::apply(fulfill,
+                                 std::move(rejectedCont)(rejectedException));
+      } catch (...) {
+        reject(std::current_exception());
+      }
+    });
+  }
+}
+
+template <typename... Types>
+template <Callable<Types...> FulfilledCont>
+PromiseFromTuple_t<std::result_of_t<FulfilledCont(Types...)>>
+promise<Types...>::then(FulfilledCont fulfilledCont) // One-argument version of case #2
+    requires
+    // tuple return type
+    IsTuple<std::result_of_t<FulfilledCont(Types...)>> {
+  using Result =
+      PromiseFromTuple_t<std::result_of_t<FulfilledCont(Types...)>>;
+
+  if (std::vector<std::pair<std::function<void(Types...)>,
+                            std::function<void(std::exception_ptr)>>>
+          *const waitingFunctions =
+              dplm17::get_if<waiting_state>(d_data->d_state)) {
+    return Result([
+      waitingFunctions, fulfilledCont = std::move(fulfilledCont)
+    ](auto fulfill, auto reject) mutable {
+      waitingFunctions->emplace_back(
+          [ fulfilledCont = std::move(fulfilledCont), fulfill,
+            reject ](Types... t) mutable {
+            try {
+              std::experimental::apply(fulfill,
+                                       std::move(fulfilledCont)(t...));
+            } catch (...) {
+              reject(std::current_exception());
+            }
+          },
+          [reject](std::exception_ptr e) { reject(e); });
+    });
+  } else if (std::tuple<Types...> const *const fulfilledValues =
+                 dplm17::get_if<fulfilled_state>(d_data->d_state)) {
+    return Result([
+      fulfilledValues, fulfilledCont = std::move(fulfilledCont)
+    ](auto fulfill, auto reject) mutable {
+      try {
+        std::experimental::apply(
+            fulfill, std::experimental::apply(std::move(fulfilledCont),
+                                              *fulfilledValues));
+      } catch (...) {
+        reject(std::current_exception());
+      }
+    });
+  } else {
+    const std::exception_ptr &rejectedException =
+        dplm17::get<rejected_state>(d_data->d_state);
+    return Result([&rejectedException](auto fulfill, auto reject) mutable {
+      reject(rejectedException);
+    });
+  }
+}
+
+template <typename... Types>
+template <Callable<Types...> FulfilledCont,
+          Callable<std::exception_ptr> RejectedCont>
+std::result_of_t<FulfilledCont(Types...)>
+promise<Types...>::then(FulfilledCont fulfilledCont,
+     RejectedCont rejectedCont) // Two-argument version of case #3
+    requires
+    // promise return type
+    IsPromise<std::result_of_t<FulfilledCont(Types...)>> &&
+
+    // 'fulfilledCont' and 'rejectedCont' have matching return values
+    std::experimental::is_same_v<
+        std::result_of_t<FulfilledCont(Types...)>,
+        std::result_of_t<RejectedCont(std::exception_ptr)>> {
+  using Result = std::result_of_t<FulfilledCont(Types...)>;
+
+  if (std::vector<std::pair<std::function<void(Types...)>,
+                            std::function<void(std::exception_ptr)>>>
+          *const waitingFunctions =
+              dplm17::get_if<waiting_state>(d_data->d_state)) {
+    // Build a promise that is fulfilled or rejected based on an inner
+    // promise.
+    return Result([
+      waitingFunctions, fulfilledCont = std::move(fulfilledCont),
+      rejectedCont = std::move(rejectedCont)
+    ](auto fulfill, auto reject) mutable {
+      waitingFunctions->emplace_back(
+          [ fulfilledCont = std::move(fulfilledCont), fulfill,
+            reject ](Types... t) mutable {
+            try {
+              Result innerPromise = std::move(fulfilledCont)(t...);
+
+              if (auto *const waitingFunctions = dplm17::get_if<waiting_state>(
+                      innerPromise.d_data->d_state)) {
+                waitingFunctions->emplace_back(fulfill, reject);
+              } else if (auto const *const fulfilledValues =
+                             dplm17::get_if<fulfilled_state>(
+                                 innerPromise.d_data->d_state)) {
+                std::experimental::apply(std::move(fulfill),
+                                         (*fulfilledValues));
+              } else {
+                const std::exception_ptr &rejectedException =
+                    dplm17::get<rejected_state>(innerPromise.d_data->d_state);
+                reject(rejectedException);
+              }
+            } catch (...) {
+              reject(std::current_exception());
+            }
+          },
+          [ rejectedCont = std::move(rejectedCont), fulfill,
+            reject ](const std::exception_ptr &e) {
+            try {
+              Result innerPromise = std::move(rejectedCont)(e);
+
+              if (auto *const waitingFunctions = dplm17::get_if<waiting_state>(
+                      innerPromise.d_data->d_state)) {
+                waitingFunctions->emplace_back(fulfill, reject);
+              } else if (auto const *const fulfilledValues =
+                             dplm17::get_if<fulfilled_state>(
+                                 innerPromise.d_data->d_state)) {
+                std::experimental::apply(std::move(fulfill),
+                                         (*fulfilledValues));
+              } else {
+                const std::exception_ptr &rejectedException =
+                    dplm17::get<rejected_state>(innerPromise.d_data->d_state);
+                reject(rejectedException);
+              }
+            } catch (...) {
+              reject(std::current_exception());
+            }
+          });
+    });
+  } else if (std::tuple<Types...> const *const fulfilledValues =
+                 dplm17::get_if<fulfilled_state>(d_data->d_state)) {
+    return std::experimental::apply(std::move(fulfilledCont),
+                                    (*fulfilledValues));
+  } else {
+    const std::exception_ptr &rejectedException =
+        dplm17::get<rejected_state>(d_data->d_state);
+    return rejectedCont(rejectedException);
+  }
+}
+
+template <typename... Types>
+template <Callable<Types...> FulfilledCont>
+std::result_of_t<FulfilledCont(Types...)>
+promise<Types...>::then(FulfilledCont fulfilledCont) // One-argument version of case #3
+    requires
+    // promise return type
+    IsPromise<std::result_of_t<FulfilledCont(Types...)>> {
+  using Result = std::result_of_t<FulfilledCont(Types...)>;
+
+  if (std::vector<std::pair<std::function<void(Types...)>,
+                            std::function<void(std::exception_ptr)>>>
+          *const waitingFunctions =
+              dplm17::get_if<waiting_state>(d_data->d_state)) {
+    // Build a promise that is fulfilled or rejected based on an inner
+    // promise.
+    return Result([
+      waitingFunctions, fulfilledCont = std::move(fulfilledCont)
+    ](auto fulfill, auto reject) mutable {
+      waitingFunctions->emplace_back(
+          [ fulfilledCont = std::move(fulfilledCont), fulfill,
+            reject ](Types... t) mutable {
+            try {
+              Result innerPromise = std::move(fulfilledCont)(t...);
+
+              if (auto *const waitingFunctions = dplm17::get_if<waiting_state>(
+                      innerPromise.d_data->d_state)) {
+                waitingFunctions->emplace_back(fulfill, reject);
+              } else if (auto const *const fulfilledValues =
+                             dplm17::get_if<fulfilled_state>(
+                                 innerPromise.d_data->d_state)) {
+                std::experimental::apply(std::move(fulfill),
+                                         (*fulfilledValues));
+              } else {
+                const std::exception_ptr &rejectedException =
+                    dplm17::get<rejected_state>(innerPromise.d_data->d_state);
+                reject(rejectedException);
+              }
+            } catch (...) {
+              reject(std::current_exception());
+            }
+          },
+          [reject](std::exception_ptr e) { reject(e); });
+    });
+  } else if (std::tuple<Types...> const *const fulfilledValues =
+                 dplm17::get_if<fulfilled_state>(d_data->d_state)) {
+    return std::experimental::apply(std::move(fulfilledCont),
+                                    (*fulfilledValues));
+  } else {
+    const std::exception_ptr &rejectedException =
+        dplm17::get<rejected_state>(d_data->d_state);
+    return Result([&rejectedException](auto fulfill, auto reject) mutable {
+      reject(rejectedException);
+    });
+  }
+}
+
+template <typename... Types>
+template <Callable<Types...> FulfilledCont,
+          Callable<std::exception_ptr> RejectedCont>
+    promise<std::result_of_t<FulfilledCont(Types...)>>
+    promise<Types...>::then(FulfilledCont fulfilledCont,
+         RejectedCont rejectedCont) // Two-argument version of case #4
+    requires
+    // non-void return type
+    !std::experimental::is_void_v<
+        std::result_of_t<FulfilledCont(Types...)>> &&
+
+    // non-tuple return type
+    !IsTuple<std::result_of_t<FulfilledCont(Types...)>> &&
+
+    // non-promise return type
+    !IsPromise<std::result_of_t<FulfilledCont(Types...)>> &&
+
+    // 'fulfilledCont' and 'rejectedCont' have matching return values
+    std::experimental::is_same_v<
+        std::result_of_t<FulfilledCont(Types...)>,
+        std::result_of_t<RejectedCont(std::exception_ptr)>> {
+  using U = std::result_of_t<FulfilledCont(Types...)>;
+
+  if (std::vector<std::pair<std::function<void(Types...)>,
+                            std::function<void(std::exception_ptr)>>>
+          *const waitingFunctions =
+              dplm17::get_if<waiting_state>(d_data->d_state)) {
+    return promise<U>([
+      waitingFunctions, fulfilledCont = std::move(fulfilledCont),
+      rejectedCont = std::move(rejectedCont)
+    ](auto fulfill, auto reject) mutable {
+      waitingFunctions->emplace_back(
+          [ fulfilledCont = std::move(fulfilledCont), fulfill,
+            reject ](Types... t) mutable {
+            try {
+              fulfill(std::move(fulfilledCont)(t...));
+            } catch (...) {
+              reject(std::current_exception());
+            }
+          },
+          [ rejectedCont = std::move(rejectedCont), fulfill,
+            reject ](std::exception_ptr e) mutable {
+            try {
+              fulfill(std::move(rejectedCont)(e));
+            } catch (...) {
+              reject(std::current_exception());
+            }
+          });
+    });
+  } else if (std::tuple<Types...> const *const fulfilledValues =
+                 dplm17::get_if<fulfilled_state>(d_data->d_state)) {
+    return promise<U>([
+      fulfilledValues, fulfilledCont = std::move(fulfilledCont)
+    ](auto fulfill, auto reject) mutable {
+      try {
+        fulfill(std::experimental::apply(std::move(fulfilledCont),
+                                         *fulfilledValues));
+      } catch (...) {
+        reject(std::current_exception());
+      }
+    });
+  } else {
+    const std::exception_ptr &rejectedException =
+        dplm17::get<rejected_state>(d_data->d_state);
+    return promise<U>([
+      &rejectedException, rejectedCont = std::move(rejectedCont)
+    ](auto fulfill, auto reject) mutable {
+      try {
+        fulfill(std::move(rejectedCont)(rejectedException));
+      } catch (...) {
+        reject(std::current_exception());
+      }
+    });
+  }
+}
+
+template <typename... Types>
+template <Callable<Types...> FulfilledCont>
+    promise<std::result_of_t<FulfilledCont(Types...)>>
+    promise<Types...>::then(FulfilledCont fulfilledCont) // One-argument version of case #4
+    requires
+    // non-void return type
+    !std::experimental::is_void_v<
+        std::result_of_t<FulfilledCont(Types...)>> &&
+
+    // non-tuple return type
+    !IsTuple<std::result_of_t<FulfilledCont(Types...)>> &&
+
+    // non-promise return type
+    !IsPromise<std::result_of_t<FulfilledCont(Types...)>> {
+  using U = std::result_of_t<FulfilledCont(Types...)>;
+
+  if (std::vector<std::pair<std::function<void(Types...)>,
+                            std::function<void(std::exception_ptr)>>>
+          *const waitingFunctions =
+              dplm17::get_if<waiting_state>(d_data->d_state)) {
+    return promise<U>([
+      waitingFunctions, fulfilledCont = std::move(fulfilledCont)
+    ](auto fulfill, auto reject) mutable {
+      waitingFunctions->emplace_back(
+          [ fulfilledCont = std::move(fulfilledCont), fulfill,
+            reject ](Types... t) mutable {
+            try {
+              fulfill(std::move(fulfilledCont)(t...));
+            } catch (...) {
+              reject(std::current_exception());
+            }
+          },
+          [reject](std::exception_ptr e) { reject(e); });
+    });
+  } else if (std::tuple<Types...> const *const fulfilledValues =
+                 dplm17::get_if<fulfilled_state>(d_data->d_state)) {
+    return promise<U>([
+      fulfilledValues, fulfilledCont = std::move(fulfilledCont)
+    ](auto fulfill, auto reject) mutable {
+      try {
+        fulfill(std::experimental::apply(std::move(fulfilledCont),
+                                         *fulfilledValues));
+      } catch (...) {
+        reject(std::current_exception());
+      }
+    });
+  } else {
+    const std::exception_ptr &rejectedException =
+        dplm17::get<rejected_state>(d_data->d_state);
+    return promise<U>([&rejectedException](
+        auto fulfill, auto reject) mutable { reject(rejectedException); });
+  }
+}
+
+template <typename... Types>
+template <typename... Types2>
+promise<Types2...> promise<Types...>::fulfill(Types2 &&... values) {
+  promise<Types2...> result;
+  result.d_data->d_state.template emplace<fulfilled_state>(
+      std::move(values)...);
+  return result;
+}
+
+template <typename... Types>
+template <typename... Types2>
+promise<Types2...> promise<Types...>::reject(std::exception_ptr error) {
+  promise<Types2...> result;
+  result.d_data->d_state.template emplace<rejected_state>(std::move(error));
+  return result;
+}
+
+template <typename... Types>
+promise<Types...>::promise() : d_data(std::make_shared<data>()) {}
 }
 
 #endif
