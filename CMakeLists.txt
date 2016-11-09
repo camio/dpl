@@ -10,4 +10,8 @@ if(NOT TARGET dplm17)
   add_subdirectory(dplm17 ${CMAKE_BINARY_DIR}/dpl/dplm17)
 endif()
 
-add_custom_target(dpl DEPENDS dplbbp dplm17)
+if(NOT TARGET dplmrts)
+  add_subdirectory(dplmrts ${CMAKE_BINARY_DIR}/dpl/dplmrts)
+endif()
+
+add_custom_target(dpl DEPENDS dplbbp dplmrts)

@@ -2,7 +2,9 @@
 #define BBP_PROMISE_INCLUDED
 
 #include <dplbbp_ranges_concepts.h> // bbp::Callable
+#include <dplbbp_anypromise.h>
 #include <dplm17_variant.h>
+#include <dplmrts_anytuple.h>
 
 #include <experimental/tuple> // std::experimental::apply
 #include <experimental/type_traits> // std::experimental::is_void_v, std::experimental::is_same_v
@@ -41,14 +43,6 @@ concept bool Resolver = Callable<F, callable_placeholder<Types...>,
 //     f(callable_placeholder<Types...>(),
 //       callable_placeholder<std::exception_ptr>());
 // };
-
-template <typename... Types> class promise;
-
-template <typename T>
-concept bool IsPromise = requires(T t){{t}->promise<auto...>};
-
-template <typename T>
-concept bool IsTuple = requires(T t){{t}->std::tuple<auto...>};
 
 template <typename T> struct PromiseFromTuple {};
 
@@ -168,7 +162,7 @@ public:
        RejectedCont rejectedCont) // Two-argument version of case #2
       requires
       // tuple return type
-      IsTuple<std::result_of_t<FulfilledCont(Types...)>> &&
+      dplmrts::AnyTuple<std::result_of_t<FulfilledCont(Types...)>> &&
 
       // 'fulfilledCont' and 'rejectedCont' have matching return values
       std::experimental::is_same_v<
@@ -180,7 +174,7 @@ public:
   then(FulfilledCont fulfilledCont) // One-argument version of case #2
       requires
       // tuple return type
-      IsTuple<std::result_of_t<FulfilledCont(Types...)>>;
+      dplmrts::AnyTuple<std::result_of_t<FulfilledCont(Types...)>>;
 
   template <Callable<Types...> FulfilledCont,
             Callable<std::exception_ptr> RejectedCont>
@@ -189,7 +183,7 @@ public:
        RejectedCont rejectedCont) // Two-argument version of case #3
       requires
       // promise return type
-      IsPromise<std::result_of_t<FulfilledCont(Types...)>> &&
+      dplbbp::AnyPromise<std::result_of_t<FulfilledCont(Types...)>> &&
 
       // 'fulfilledCont' and 'rejectedCont' have matching return values
       std::experimental::is_same_v<
@@ -201,7 +195,7 @@ public:
   then(FulfilledCont fulfilledCont) // One-argument version of case #3
       requires
       // promise return type
-      IsPromise<std::result_of_t<FulfilledCont(Types...)>>;
+      dplbbp::AnyPromise<std::result_of_t<FulfilledCont(Types...)>>;
 
   template <Callable<Types...> FulfilledCont,
             Callable<std::exception_ptr> RejectedCont>
@@ -214,10 +208,10 @@ public:
           std::result_of_t<FulfilledCont(Types...)>> &&
 
       // non-tuple return type
-      !IsTuple<std::result_of_t<FulfilledCont(Types...)>> &&
+      !dplmrts::AnyTuple<std::result_of_t<FulfilledCont(Types...)>> &&
 
       // non-promise return type
-      !IsPromise<std::result_of_t<FulfilledCont(Types...)>> &&
+      !dplbbp::AnyPromise<std::result_of_t<FulfilledCont(Types...)>> &&
 
       // 'fulfilledCont' and 'rejectedCont' have matching return values
       std::experimental::is_same_v<
@@ -233,10 +227,10 @@ public:
           std::result_of_t<FulfilledCont(Types...)>> &&
 
       // non-tuple return type
-      !IsTuple<std::result_of_t<FulfilledCont(Types...)>> &&
+      !dplmrts::AnyTuple<std::result_of_t<FulfilledCont(Types...)>> &&
 
       // non-promise return type
-      !IsPromise<std::result_of_t<FulfilledCont(Types...)>>;
+      !dplbbp::AnyPromise<std::result_of_t<FulfilledCont(Types...)>>;
 
   // Return a promise with the specified types that is fulfilled with the
   // specified 'values'.
@@ -408,7 +402,7 @@ promise<Types...>::then(FulfilledCont fulfilledCont,
      RejectedCont rejectedCont) // Two-argument version of case #2
     requires
     // tuple return type
-    IsTuple<std::result_of_t<FulfilledCont(Types...)>> &&
+    dplmrts::AnyTuple<std::result_of_t<FulfilledCont(Types...)>> &&
 
     // 'fulfilledCont' and 'rejectedCont' have matching return values
     std::experimental::is_same_v<
@@ -479,7 +473,7 @@ PromiseFromTuple_t<std::result_of_t<FulfilledCont(Types...)>>
 promise<Types...>::then(FulfilledCont fulfilledCont) // One-argument version of case #2
     requires
     // tuple return type
-    IsTuple<std::result_of_t<FulfilledCont(Types...)>> {
+    dplmrts::AnyTuple<std::result_of_t<FulfilledCont(Types...)>> {
   using Result =
       PromiseFromTuple_t<std::result_of_t<FulfilledCont(Types...)>>;
 
@@ -532,7 +526,7 @@ promise<Types...>::then(FulfilledCont fulfilledCont,
      RejectedCont rejectedCont) // Two-argument version of case #3
     requires
     // promise return type
-    IsPromise<std::result_of_t<FulfilledCont(Types...)>> &&
+    dplbbp::AnyPromise<std::result_of_t<FulfilledCont(Types...)>> &&
 
     // 'fulfilledCont' and 'rejectedCont' have matching return values
     std::experimental::is_same_v<
@@ -613,7 +607,7 @@ std::result_of_t<FulfilledCont(Types...)>
 promise<Types...>::then(FulfilledCont fulfilledCont) // One-argument version of case #3
     requires
     // promise return type
-    IsPromise<std::result_of_t<FulfilledCont(Types...)>> {
+    dplbbp::AnyPromise<std::result_of_t<FulfilledCont(Types...)>> {
   using Result = std::result_of_t<FulfilledCont(Types...)>;
 
   if (std::vector<std::pair<std::function<void(Types...)>,
@@ -675,10 +669,10 @@ template <Callable<Types...> FulfilledCont,
         std::result_of_t<FulfilledCont(Types...)>> &&
 
     // non-tuple return type
-    !IsTuple<std::result_of_t<FulfilledCont(Types...)>> &&
+    !dplmrts::AnyTuple<std::result_of_t<FulfilledCont(Types...)>> &&
 
     // non-promise return type
-    !IsPromise<std::result_of_t<FulfilledCont(Types...)>> &&
+    !dplbbp::AnyPromise<std::result_of_t<FulfilledCont(Types...)>> &&
 
     // 'fulfilledCont' and 'rejectedCont' have matching return values
     std::experimental::is_same_v<
@@ -749,10 +743,10 @@ template <Callable<Types...> FulfilledCont>
         std::result_of_t<FulfilledCont(Types...)>> &&
 
     // non-tuple return type
-    !IsTuple<std::result_of_t<FulfilledCont(Types...)>> &&
+    !dplmrts::AnyTuple<std::result_of_t<FulfilledCont(Types...)>> &&
 
     // non-promise return type
-    !IsPromise<std::result_of_t<FulfilledCont(Types...)>> {
+    !dplbbp::AnyPromise<std::result_of_t<FulfilledCont(Types...)>> {
   using U = std::result_of_t<FulfilledCont(Types...)>;
 
   if (std::vector<std::pair<std::function<void(Types...)>,
