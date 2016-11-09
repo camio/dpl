@@ -1,7 +1,7 @@
 #ifndef BBP_PROMISE_INCLUDED
 #define BBP_PROMISE_INCLUDED
 
-#include <dplbbp_ranges_concepts.h> // bbp::Callable
+#include <dplmrts_invocable.h>
 #include <dplbbp_anypromise.h>
 #include <dplm17_variant.h>
 #include <dplmrts_anytuple.h>
@@ -18,7 +18,7 @@
 namespace dplbbp {
 
 // 'callable_placeholder<Types...>' is a type that satisifies
-// 'Callable<Types...>'.
+// 'dplmrts::Invocable<Types...>'.
 //
 // Note that placeholders like this are required for concepts that require
 // arbitrary types matching another concept in their definition. Also note that
@@ -28,11 +28,10 @@ template <typename... Types> class callable_placeholder {
 };
 
 // Types that satisfy 'Resolver<Types...>' are callable with their first
-// argument satisfying 'Callable<Types...>' and their second argument
-// satisfying
-// 'Callable<std::exception_ptr>'.
+// argument satisfying 'dplmrts::Invocable<Types...>' and their second argument
+// satisfying 'dplmrts::Invocable<std::exception_ptr>'.
 template <typename F, typename... Types>
-concept bool Resolver = Callable<F, callable_placeholder<Types...>,
+concept bool Resolver = dplmrts::Invocable<F, callable_placeholder<Types...>,
                                  callable_placeholder<std::exception_ptr>>;
 
 // What follows is an alternate definition of the same concept.
@@ -95,12 +94,12 @@ template <typename... Types> class promise {
 public:
   // Create a new 'promise' object based on the specified 'resolver'.
   // 'resolver' is called exactly once by this constructor with a
-  // 'Callable<Types...>' (resolve function) as its first and a
-  // 'Callable<std::exception_ptr>' (reject function) as its second argument.
-  // When the resolve function is called, this promise is fulfilled with its
-  // arguments. When the reject function is called, this promise is rejected
-  // with its argument. The behavior is undefined unless at most one of the
-  // arguments to 'resolver' is ever called.
+  // 'dplmrts::Invocable<Types...>' (resolve function) as its first and a
+  // 'dplmrts::Invocable<std::exception_ptr>' (reject function) as its second
+  // argument.  When the resolve function is called, this promise is fulfilled
+  // with its arguments. When the reject function is called, this promise is
+  // rejected with its argument. The behavior is undefined unless at most one
+  // of the arguments to 'resolver' is ever called.
   //
   // Note that neither the reject nor resolve functions need be called from
   // within 'resolver'. 'resolver' could, for example, store these functions
@@ -136,8 +135,8 @@ public:
   //    'fulfilledCont' is 'T', then the result of this function will be of
   //    type 'promise<T>'.
 
-  template <Callable<Types...> FulfilledCont,
-            Callable<std::exception_ptr> RejectedCont>
+  template <dplmrts::Invocable<Types...> FulfilledCont,
+            dplmrts::Invocable<std::exception_ptr> RejectedCont>
   promise<> then(FulfilledCont fulfilledCont,
                  RejectedCont rejectedCont) // Two-argument version of case #1
       requires
@@ -149,14 +148,14 @@ public:
           std::result_of_t<FulfilledCont(Types...)>,
           std::result_of_t<RejectedCont(std::exception_ptr)>>;
 
-  template <Callable<Types...> FulfilledCont>
+  template <dplmrts::Invocable<Types...> FulfilledCont>
   promise<> then(FulfilledCont fulfilledCont) // One-argument version of case #1
       requires
       // void return type
       std::experimental::is_void_v<std::result_of_t<FulfilledCont(Types...)>>;
 
-  template <Callable<Types...> FulfilledCont,
-            Callable<std::exception_ptr> RejectedCont>
+  template <dplmrts::Invocable<Types...> FulfilledCont,
+            dplmrts::Invocable<std::exception_ptr> RejectedCont>
   PromiseFromTuple_t<std::result_of_t<FulfilledCont(Types...)>>
   then(FulfilledCont fulfilledCont,
        RejectedCont rejectedCont) // Two-argument version of case #2
@@ -169,15 +168,15 @@ public:
           std::result_of_t<FulfilledCont(Types...)>,
           std::result_of_t<RejectedCont(std::exception_ptr)>>;
 
-  template <Callable<Types...> FulfilledCont>
+  template <dplmrts::Invocable<Types...> FulfilledCont>
   PromiseFromTuple_t<std::result_of_t<FulfilledCont(Types...)>>
   then(FulfilledCont fulfilledCont) // One-argument version of case #2
       requires
       // tuple return type
       dplmrts::AnyTuple<std::result_of_t<FulfilledCont(Types...)>>;
 
-  template <Callable<Types...> FulfilledCont,
-            Callable<std::exception_ptr> RejectedCont>
+  template <dplmrts::Invocable<Types...> FulfilledCont,
+            dplmrts::Invocable<std::exception_ptr> RejectedCont>
   std::result_of_t<FulfilledCont(Types...)>
   then(FulfilledCont fulfilledCont,
        RejectedCont rejectedCont) // Two-argument version of case #3
@@ -190,15 +189,15 @@ public:
           std::result_of_t<FulfilledCont(Types...)>,
           std::result_of_t<RejectedCont(std::exception_ptr)>>;
 
-  template <Callable<Types...> FulfilledCont>
+  template <dplmrts::Invocable<Types...> FulfilledCont>
   std::result_of_t<FulfilledCont(Types...)>
   then(FulfilledCont fulfilledCont) // One-argument version of case #3
       requires
       // promise return type
       dplbbp::AnyPromise<std::result_of_t<FulfilledCont(Types...)>>;
 
-  template <Callable<Types...> FulfilledCont,
-            Callable<std::exception_ptr> RejectedCont>
+  template <dplmrts::Invocable<Types...> FulfilledCont,
+            dplmrts::Invocable<std::exception_ptr> RejectedCont>
       promise<std::result_of_t<FulfilledCont(Types...)>>
       then(FulfilledCont fulfilledCont,
            RejectedCont rejectedCont) // Two-argument version of case #4
@@ -218,7 +217,7 @@ public:
           std::result_of_t<FulfilledCont(Types...)>,
           std::result_of_t<RejectedCont(std::exception_ptr)>>;
 
-  template <Callable<Types...> FulfilledCont>
+  template <dplmrts::Invocable<Types...> FulfilledCont>
       promise<std::result_of_t<FulfilledCont(Types...)>>
       then(FulfilledCont fulfilledCont) // One-argument version of case #4
       requires
@@ -280,8 +279,8 @@ promise<Types...>::promise(Resolver<Types...> resolver) : d_data(std::make_share
 }
 
 template <typename... Types>
-template <Callable<Types...> FulfilledCont,
-          Callable<std::exception_ptr> RejectedCont>
+template <dplmrts::Invocable<Types...> FulfilledCont,
+          dplmrts::Invocable<std::exception_ptr> RejectedCont>
 promise<> promise<Types...>::then(FulfilledCont fulfilledCont,
                RejectedCont rejectedCont) // Two-argument version of case #1
     requires
@@ -349,7 +348,7 @@ promise<> promise<Types...>::then(FulfilledCont fulfilledCont,
 }
 
 template <typename... Types>
-template <Callable<Types...> FulfilledCont>
+template <dplmrts::Invocable<Types...> FulfilledCont>
 promise<> promise<Types...>::then(FulfilledCont fulfilledCont) // One-argument version of case #1
     requires
     // void return type
@@ -395,8 +394,8 @@ promise<> promise<Types...>::then(FulfilledCont fulfilledCont) // One-argument v
 }
 
 template <typename... Types>
-template <Callable<Types...> FulfilledCont,
-          Callable<std::exception_ptr> RejectedCont>
+template <dplmrts::Invocable<Types...> FulfilledCont,
+          dplmrts::Invocable<std::exception_ptr> RejectedCont>
 PromiseFromTuple_t<std::result_of_t<FulfilledCont(Types...)>>
 promise<Types...>::then(FulfilledCont fulfilledCont,
      RejectedCont rejectedCont) // Two-argument version of case #2
@@ -468,7 +467,7 @@ promise<Types...>::then(FulfilledCont fulfilledCont,
 }
 
 template <typename... Types>
-template <Callable<Types...> FulfilledCont>
+template <dplmrts::Invocable<Types...> FulfilledCont>
 PromiseFromTuple_t<std::result_of_t<FulfilledCont(Types...)>>
 promise<Types...>::then(FulfilledCont fulfilledCont) // One-argument version of case #2
     requires
@@ -519,8 +518,8 @@ promise<Types...>::then(FulfilledCont fulfilledCont) // One-argument version of 
 }
 
 template <typename... Types>
-template <Callable<Types...> FulfilledCont,
-          Callable<std::exception_ptr> RejectedCont>
+template <dplmrts::Invocable<Types...> FulfilledCont,
+          dplmrts::Invocable<std::exception_ptr> RejectedCont>
 std::result_of_t<FulfilledCont(Types...)>
 promise<Types...>::then(FulfilledCont fulfilledCont,
      RejectedCont rejectedCont) // Two-argument version of case #3
@@ -602,7 +601,7 @@ promise<Types...>::then(FulfilledCont fulfilledCont,
 }
 
 template <typename... Types>
-template <Callable<Types...> FulfilledCont>
+template <dplmrts::Invocable<Types...> FulfilledCont>
 std::result_of_t<FulfilledCont(Types...)>
 promise<Types...>::then(FulfilledCont fulfilledCont) // One-argument version of case #3
     requires
@@ -658,8 +657,8 @@ promise<Types...>::then(FulfilledCont fulfilledCont) // One-argument version of 
 }
 
 template <typename... Types>
-template <Callable<Types...> FulfilledCont,
-          Callable<std::exception_ptr> RejectedCont>
+template <dplmrts::Invocable<Types...> FulfilledCont,
+          dplmrts::Invocable<std::exception_ptr> RejectedCont>
     promise<std::result_of_t<FulfilledCont(Types...)>>
     promise<Types...>::then(FulfilledCont fulfilledCont,
          RejectedCont rejectedCont) // Two-argument version of case #4
@@ -734,7 +733,7 @@ template <Callable<Types...> FulfilledCont,
 }
 
 template <typename... Types>
-template <Callable<Types...> FulfilledCont>
+template <dplmrts::Invocable<Types...> FulfilledCont>
     promise<std::result_of_t<FulfilledCont(Types...)>>
     promise<Types...>::then(FulfilledCont fulfilledCont) // One-argument version of case #4
     requires

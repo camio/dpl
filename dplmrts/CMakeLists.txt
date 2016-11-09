@@ -9,5 +9,6 @@ find_package(GTest REQUIRED)
 
 add_library(dplmrts
   dplmrts_anytuple.cpp
+  dplmrts_invocable.cpp
 )
 target_include_directories(dplmrts PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
