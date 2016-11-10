@@ -2,6 +2,7 @@
 #define BBP_PROMISE_INCLUDED
 
 #include <dplmrts_invocable.h>
+#include <dplmrts_invocablearchetype.h>
 #include <dplbbp_anypromise.h>
 #include <dplm17_variant.h>
 #include <dplmrts_anytuple.h>
@@ -18,30 +19,20 @@
 
 namespace dplbbp {
 
-// 'callable_placeholder<Types...>' is a type that satisifies
-// 'dplmrts::Invocable<Types...>'.
-//
-// Note that placeholders like this are required for concepts that require
-// arbitrary types matching another concept in their definition. Also note that
-// while this makes for a decent check it is not exhaustive (nor can it be).
-template <typename... Types> class callable_placeholder {
-  void operator()(Types...) const {}
-};
-
 // Types that satisfy 'Resolver<Types...>' are callable with their first
 // argument satisfying 'dplmrts::Invocable<Types...>' and their second argument
 // satisfying 'dplmrts::Invocable<std::exception_ptr>'.
 template <typename F, typename... Types>
-concept bool Resolver = dplmrts::Invocable<F, callable_placeholder<Types...>,
-                                 callable_placeholder<std::exception_ptr>>;
+concept bool Resolver = dplmrts::Invocable<F, dplmrts::InvocableArchetype<Types...>,
+                                 dplmrts::InvocableArchetype<std::exception_ptr>>;
 
 // What follows is an alternate definition of the same concept.
 //
 // template <typename F, typename... Types>
 // concept bool Resolver = requires(F f, Types... t)
 // {
-//     f(callable_placeholder<Types...>(),
-//       callable_placeholder<std::exception_ptr>());
+//     f(dplmrts::InvocableArchetype<Types...>(),
+//       dplmrts::InvocableArchetype<std::exception_ptr>());
 // };
 
 template <typename T> struct PromiseFromTuple {};
