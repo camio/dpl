@@ -3,17 +3,17 @@
 #include <gtest/gtest.h>
 #include <string>
 
-TEST(dpl_bbp_promise, basic) {
+TEST(dplbbp_promise, basic) {
   dplbbp::promise<int> p([](auto fulfill, auto reject) { fulfill(3); });
 }
 
-TEST(dpl_bbp_promise, empty_promise) {
+TEST(dplbbp_promise, empty_promise) {
   dplbbp::promise<> p([](auto fulfill, auto reject) { fulfill(); });
 }
 
 // Check that when the then function has a 'void' return, then the
 // corresponding promise is an empty promise.
-TEST(dpl_bbp_promise, void_then) {
+TEST(dplbbp_promise, void_then) {
   dplbbp::promise<> foo = dplbbp::promise<>([](auto fulfill, auto reject) {
                          fulfill();
                        }).then([]() {});
@@ -23,7 +23,7 @@ TEST(dpl_bbp_promise, void_then) {
                        }).then([](int) {}, [](std::exception_ptr) {});
 }
 
-TEST(dpl_bbp_promise, then_two_arg) {
+TEST(dplbbp_promise, then_two_arg) {
   //  Note the error message here. Concepts doesn't help.
   //  dplbbp::promise<int> q([](auto fulfill, auto reject) { fulfill("33"); });
 
@@ -73,7 +73,7 @@ TEST(dpl_bbp_promise, then_two_arg) {
   EXPECT_EQ(result, "expected_error") << "Error handling didn't happen.";
 }
 
-TEST(dpl_bbp_promise, then_one_arg) {
+TEST(dplbbp_promise, then_one_arg) {
   std::string result;
   dplbbp::promise<int>([](auto fulfill, auto reject) {
     fulfill(3);
@@ -110,7 +110,7 @@ TEST(dpl_bbp_promise, then_one_arg) {
   EXPECT_EQ(result, "expected_error") << "Error handling didn't happen.";
 }
 
-TEST(dpl_bbp_promise, fulfill) {
+TEST(dplbbp_promise, fulfill) {
   dplbbp::promise<int, double> p = dplbbp::promise<>::fulfill(3, 2.5);
 
   bool fulfilled = false;
@@ -122,7 +122,7 @@ TEST(dpl_bbp_promise, fulfill) {
   EXPECT_TRUE(fulfilled) << "Promise wasn't fulfilled.";
 }
 
-TEST(dpl_bbp_promise, reject) {
+TEST(dplbbp_promise, reject) {
   std::exception_ptr error;
   try {
     throw std::runtime_error("test");
@@ -141,7 +141,7 @@ TEST(dpl_bbp_promise, reject) {
   EXPECT_TRUE(rejected) << "Promise wasn't rejected.";
 }
 
-TEST(dpl_bbp_promise, then_promise_promise) {
+TEST(dplbbp_promise, then_promise_promise) {
   dplbbp::promise<> p = dplbbp::promise<>::fulfill();
 
   {
@@ -169,7 +169,7 @@ TEST(dpl_bbp_promise, then_promise_promise) {
   }
 }
 
-TEST(dpl_bbp_promise, then_tuple) {
+TEST(dplbbp_promise, then_tuple) {
   dplbbp::promise<> p = dplbbp::promise<>::fulfill();
 
   {
@@ -211,7 +211,7 @@ struct C {
 };
 }
 
-TEST(dpl_bbp_promise, invoke) {
+TEST(dplbbp_promise, invoke) {
   // Check that 'std::invoke' is being called with continuation functions. We
   // do this by providing member functions which do not work with the normal
   // call syntax.
