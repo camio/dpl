@@ -14,6 +14,7 @@ find_package(GTest REQUIRED)
 add_library(dplbbp
   dplbbp_anypromise.cpp
   dplbbp_promise.cpp
+  dplbbp_resolver.cpp
 )
 target_include_directories(dplbbp PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 target_link_libraries(dplbbp PUBLIC

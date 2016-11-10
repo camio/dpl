@@ -4,6 +4,7 @@
 #include <dplmrts_invocable.h>
 #include <dplmrts_invocablearchetype.h>
 #include <dplbbp_anypromise.h>
+#include <dplbbp_resolver.h>
 #include <dplm17_variant.h>
 #include <dplmrts_anytuple.h>
 
@@ -12,37 +13,23 @@
 
 #include <exception> // std::exception_ptr
 #include <functional> // std::function, std::invoke
-#include <iostream>
 #include <tuple>       // std::invoke, std::tuple
 #include <type_traits> // std::is_same, std::result_of, std::is_void
 #include <vector>
 
 namespace dplbbp {
 
-// Types that satisfy 'Resolver<Types...>' are callable with their first
-// argument satisfying 'dplmrts::Invocable<Types...>' and their second argument
-// satisfying 'dplmrts::Invocable<std::exception_ptr>'.
-template <typename F, typename... Types>
-concept bool Resolver = dplmrts::Invocable<F, dplmrts::InvocableArchetype<Types...>,
-                                 dplmrts::InvocableArchetype<std::exception_ptr>>;
-
-// What follows is an alternate definition of the same concept.
-//
-// template <typename F, typename... Types>
-// concept bool Resolver = requires(F f, Types... t)
-// {
-//     f(dplmrts::InvocableArchetype<Types...>(),
-//       dplmrts::InvocableArchetype<std::exception_ptr>());
-// };
-
-template <typename T> struct PromiseFromTuple {};
-
-template <typename... T> struct PromiseFromTuple<std::tuple<T...>> {
+// 'Promise_TupleContinuationThenResult' is a type function that, when given a
+// tuple type, returns a promise type that has fufillment types that match the
+// element types of the tuple.
+template <typename T> struct Promise_TupleContinuationThenResultImp {};
+template <typename... T>
+struct Promise_TupleContinuationThenResultImp<std::tuple<T...>> {
   using type = dplbbp::promise<T...>;
 };
-
-template <typename Tuple>
-using PromiseFromTuple_t = typename PromiseFromTuple<Tuple>::type;
+template <dplmrts::AnyTuple T>
+using Promise_TupleContinuationThenResult =
+    typename Promise_TupleContinuationThenResultImp<T>::type;
 
 // This class implements a value semantic type representing a heterogenius
 // sequence of values or exception at some point in time.
@@ -96,7 +83,7 @@ public:
   // Note that neither the reject nor resolve functions need be called from
   // within 'resolver'. 'resolver' could, for example, store these functions
   // elsewhere to be called at a later time.
-  promise(Resolver<Types...> resolver);
+  promise(dplbbp::Resolver<Types...> resolver);
 
   // Return a new promise that, upon the fulfilment of this promise, will be
   // fulfilled with the result of the specified 'fulfilledCont' function or,
@@ -148,7 +135,7 @@ public:
 
   template <dplmrts::Invocable<Types...> FulfilledCont,
             dplmrts::Invocable<std::exception_ptr> RejectedCont>
-  PromiseFromTuple_t<std::result_of_t<FulfilledCont(Types...)>>
+  Promise_TupleContinuationThenResult<std::result_of_t<FulfilledCont(Types...)>>
   then(FulfilledCont fulfilledCont,
        RejectedCont rejectedCont) // Two-argument version of case #2
       requires
@@ -161,7 +148,7 @@ public:
           std::result_of_t<RejectedCont(std::exception_ptr)>>;
 
   template <dplmrts::Invocable<Types...> FulfilledCont>
-  PromiseFromTuple_t<std::result_of_t<FulfilledCont(Types...)>>
+  Promise_TupleContinuationThenResult<std::result_of_t<FulfilledCont(Types...)>>
   then(FulfilledCont fulfilledCont) // One-argument version of case #2
       requires
       // tuple return type
@@ -244,7 +231,7 @@ private:
 // ============================================================================
 
 template <typename... Types>
-promise<Types...>::promise(Resolver<Types...> resolver) : d_data(std::make_shared<data>())
+promise<Types...>::promise(dplbbp::Resolver<Types...> resolver) : d_data(std::make_shared<data>())
 {
   // Set 'fulfil' to the fulfilment function. Note that it, as well as
   // reject, keeps its own shared pointer to 'd_data'.
@@ -388,7 +375,7 @@ promise<> promise<Types...>::then(FulfilledCont fulfilledCont) // One-argument v
 template <typename... Types>
 template <dplmrts::Invocable<Types...> FulfilledCont,
           dplmrts::Invocable<std::exception_ptr> RejectedCont>
-PromiseFromTuple_t<std::result_of_t<FulfilledCont(Types...)>>
+Promise_TupleContinuationThenResult<std::result_of_t<FulfilledCont(Types...)>>
 promise<Types...>::then(FulfilledCont fulfilledCont,
      RejectedCont rejectedCont) // Two-argument version of case #2
     requires
@@ -400,7 +387,7 @@ promise<Types...>::then(FulfilledCont fulfilledCont,
         std::result_of_t<FulfilledCont(Types...)>,
         std::result_of_t<RejectedCont(std::exception_ptr)>> {
   using Result =
-      PromiseFromTuple_t<std::result_of_t<FulfilledCont(Types...)>>;
+      Promise_TupleContinuationThenResult<std::result_of_t<FulfilledCont(Types...)>>;
 
   if (std::vector<std::pair<std::function<void(Types...)>,
                             std::function<void(std::exception_ptr)>>>
@@ -460,13 +447,13 @@ promise<Types...>::then(FulfilledCont fulfilledCont,
 
 template <typename... Types>
 template <dplmrts::Invocable<Types...> FulfilledCont>
-PromiseFromTuple_t<std::result_of_t<FulfilledCont(Types...)>>
+Promise_TupleContinuationThenResult<std::result_of_t<FulfilledCont(Types...)>>
 promise<Types...>::then(FulfilledCont fulfilledCont) // One-argument version of case #2
     requires
     // tuple return type
     dplmrts::AnyTuple<std::result_of_t<FulfilledCont(Types...)>> {
   using Result =
-      PromiseFromTuple_t<std::result_of_t<FulfilledCont(Types...)>>;
+      Promise_TupleContinuationThenResult<std::result_of_t<FulfilledCont(Types...)>>;
 
   if (std::vector<std::pair<std::function<void(Types...)>,
                             std::function<void(std::exception_ptr)>>>
