@@ -10,6 +10,7 @@
 #include <experimental/type_traits> // std::experimental::is_void_v, std::experimental::is_same_v
 
 #include <exception> // std::exception_ptr
+#include <functional> // std::function, std::invoke
 #include <iostream>
 #include <tuple>       // std::invoke, std::tuple
 #include <type_traits> // std::is_same, std::result_of, std::is_void
@@ -275,7 +276,7 @@ promise<Types...>::promise(Resolver<Types...> resolver) : d_data(std::make_share
     d_data->d_state.template emplace<rejected_state>(std::move(e));
   };
 
-  resolver(std::move(fulfil), std::move(reject));
+  std::invoke(resolver, std::move(fulfil), std::move(reject));
 }
 
 template <typename... Types>
@@ -303,7 +304,7 @@ promise<> promise<Types...>::then(FulfilledCont fulfilledCont,
           [ fulfilledCont = std::move(fulfilledCont), fulfill,
             reject ](Types... t) mutable {
             try {
-              std::move(fulfilledCont)(t...);
+              std::invoke(std::move(fulfilledCont), t...);
               fulfill();
             } catch (...) {
               reject(std::current_exception());
@@ -312,7 +313,7 @@ promise<> promise<Types...>::then(FulfilledCont fulfilledCont,
           [ rejectedCont = std::move(rejectedCont), fulfill,
             reject ](std::exception_ptr e) mutable {
             try {
-              std::move(rejectedCont)(e);
+              std::invoke(std::move(rejectedCont), e);
               fulfill();
             } catch (...) {
               reject(std::current_exception());
@@ -338,7 +339,7 @@ promise<> promise<Types...>::then(FulfilledCont fulfilledCont,
       &rejectedException, rejectedCont = std::move(rejectedCont)
     ](auto fulfill, auto reject) mutable {
       try {
-        std::move(rejectedCont)(rejectedException);
+        std::invoke(std::move(rejectedCont), rejectedException);
         fulfill();
       } catch (...) {
         reject(std::current_exception());
@@ -364,7 +365,7 @@ promise<> promise<Types...>::then(FulfilledCont fulfilledCont) // One-argument v
           [ fulfilledCont = std::move(fulfilledCont), fulfill,
             reject ](Types... t) {
             try {
-              std::move(fulfilledCont)(t...);
+              std::invoke(std::move(fulfilledCont), t...);
               fulfill();
             } catch (...) {
               reject(std::current_exception());
@@ -431,7 +432,7 @@ promise<Types...>::then(FulfilledCont fulfilledCont,
           [ rejectedCont = std::move(rejectedCont), fulfill,
             reject ](std::exception_ptr e) mutable {
             try {
-              std::experimental::apply(fulfill, std::move(rejectedCont)(e));
+              std::experimental::apply(fulfill, std::invoke(std::move(rejectedCont), e));
             } catch (...) {
               reject(std::current_exception());
             }
@@ -458,7 +459,7 @@ promise<Types...>::then(FulfilledCont fulfilledCont,
     ](auto fulfill, auto reject) mutable {
       try {
         std::experimental::apply(fulfill,
-                                 std::move(rejectedCont)(rejectedException));
+                                 std::invoke(std::move(rejectedCont), rejectedException));
       } catch (...) {
         reject(std::current_exception());
       }
@@ -488,7 +489,7 @@ promise<Types...>::then(FulfilledCont fulfilledCont) // One-argument version of 
             reject ](Types... t) mutable {
             try {
               std::experimental::apply(fulfill,
-                                       std::move(fulfilledCont)(t...));
+                                       std::invoke(std::move(fulfilledCont),t...));
             } catch (...) {
               reject(std::current_exception());
             }
@@ -547,7 +548,7 @@ promise<Types...>::then(FulfilledCont fulfilledCont,
           [ fulfilledCont = std::move(fulfilledCont), fulfill,
             reject ](Types... t) mutable {
             try {
-              Result innerPromise = std::move(fulfilledCont)(t...);
+              Result innerPromise = std::invoke(std::move(fulfilledCont), t...);
 
               if (auto *const waitingFunctions = dplm17::get_if<waiting_state>(
                       innerPromise.d_data->d_state)) {
@@ -569,7 +570,7 @@ promise<Types...>::then(FulfilledCont fulfilledCont,
           [ rejectedCont = std::move(rejectedCont), fulfill,
             reject ](const std::exception_ptr &e) {
             try {
-              Result innerPromise = std::move(rejectedCont)(e);
+              Result innerPromise = std::invoke(std::move(rejectedCont), e);
 
               if (auto *const waitingFunctions = dplm17::get_if<waiting_state>(
                       innerPromise.d_data->d_state)) {
@@ -596,7 +597,7 @@ promise<Types...>::then(FulfilledCont fulfilledCont,
   } else {
     const std::exception_ptr &rejectedException =
         dplm17::get<rejected_state>(d_data->d_state);
-    return rejectedCont(rejectedException);
+    return std::invoke(std::move(rejectedCont), rejectedException);
   }
 }
 
@@ -622,7 +623,7 @@ promise<Types...>::then(FulfilledCont fulfilledCont) // One-argument version of 
           [ fulfilledCont = std::move(fulfilledCont), fulfill,
             reject ](Types... t) mutable {
             try {
-              Result innerPromise = std::move(fulfilledCont)(t...);
+              Result innerPromise = std::invoke(std::move(fulfilledCont), t...);
 
               if (auto *const waitingFunctions = dplm17::get_if<waiting_state>(
                       innerPromise.d_data->d_state)) {
@@ -691,7 +692,7 @@ template <dplmrts::Invocable<Types...> FulfilledCont,
           [ fulfilledCont = std::move(fulfilledCont), fulfill,
             reject ](Types... t) mutable {
             try {
-              fulfill(std::move(fulfilledCont)(t...));
+              fulfill(std::invoke(std::move(fulfilledCont), t...));
             } catch (...) {
               reject(std::current_exception());
             }
@@ -699,7 +700,7 @@ template <dplmrts::Invocable<Types...> FulfilledCont,
           [ rejectedCont = std::move(rejectedCont), fulfill,
             reject ](std::exception_ptr e) mutable {
             try {
-              fulfill(std::move(rejectedCont)(e));
+              fulfill(std::invoke(std::move(rejectedCont), e));
             } catch (...) {
               reject(std::current_exception());
             }
@@ -724,7 +725,7 @@ template <dplmrts::Invocable<Types...> FulfilledCont,
       &rejectedException, rejectedCont = std::move(rejectedCont)
     ](auto fulfill, auto reject) mutable {
       try {
-        fulfill(std::move(rejectedCont)(rejectedException));
+        fulfill(std::invoke(std::move(rejectedCont), rejectedException));
       } catch (...) {
         reject(std::current_exception());
       }
@@ -759,7 +760,7 @@ template <dplmrts::Invocable<Types...> FulfilledCont>
           [ fulfilledCont = std::move(fulfilledCont), fulfill,
             reject ](Types... t) mutable {
             try {
-              fulfill(std::move(fulfilledCont)(t...));
+              fulfill(std::invoke(std::move(fulfilledCont), t...));
             } catch (...) {
               reject(std::current_exception());
             }

@@ -203,6 +203,35 @@ TEST(dpl_bbp_promise, then_tuple) {
   }
 }
 
+namespace {
+struct C {
+  int f() const {
+    return 4;
+  }
+};
+}
+
+TEST(dpl_bbp_promise, invoke) {
+  // Check that 'std::invoke' is being called with continuation functions. We
+  // do this by providing member functions which do not work with the normal
+  // call syntax.
+
+  dplbbp::promise<C> p = dplbbp::promise<>::fulfill(C());
+
+  bool fulfilled = false;
+
+  std::experimental::apply(std::move(&C::f),
+                             std::tuple<C>(C()));
+
+  p.then(&C::f)
+    .then([&fulfilled](int i)
+    {
+      fulfilled = true;
+      EXPECT_EQ(i, 4) << "Unexpected value in fulfilled promise.";
+    } );
+  EXPECT_TRUE(fulfilled) << "Promise wasn't fulfilled.";
+}
+
 // TODO: add some tests that interact with asio.
 //       - ASIO_STANDALONE is the definition required.
 // TODO: add test that exceptions in the resolver are rethrown.
