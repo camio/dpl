@@ -4,11 +4,9 @@
 
 Files:
 
-- **dpl/bbp/promise.h**. Contains the `bbp::promise` class.
-- **dpl/bbp/promise.t.cpp**. Test driver for the above component. Uses
+- **dplp_promise.h**. Contains the `dplp::promise` class.
+- **dplp_promise.t.cpp**. Test driver for the above component. Uses
   `gtest`.
-- **dpl/bbp/ranges_concepts.h**. Some concepts from the Ranges TS that were
-  pulled and modified.
 
 Promises are intended to be used as the result of asynchronous operations and
 can be chained together in various ways. It is modeled after the JavaScript
@@ -21,7 +19,7 @@ to a database, and sends the response back to the server.
 ```c++
 server myServer;
 
-bbp::promise<Request> requestPromise = myServer.getPendingRequest(/*...*/);
+dplp::promise<Request> requestPromise = myServer.getPendingRequest(/*...*/);
 
 requestPromise
 .then( [](Request request){
@@ -31,7 +29,7 @@ requestPromise
   } else {
     assert(request.wantsHardcodedName());
     // 'fulfill' also returns a 'promise<std::string>'.
-    return bbp::promise<>::fulfill(std::string("Joe"));
+    return dplp::promise<>::fulfill(std::string("Joe"));
   }
 })
 .then( [myServer&](std::string s) {

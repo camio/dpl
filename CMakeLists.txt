@@ -2,8 +2,8 @@ cmake_minimum_required(VERSION 3.6)
 
 project(dpl)
 
-if(NOT TARGET dplbbp)
-  add_subdirectory(dplbbp ${CMAKE_BINARY_DIR}/dpl/dplbbp)
+if(NOT TARGET dplp)
+  add_subdirectory(dplp ${CMAKE_BINARY_DIR}/dpl/dplp)
 endif()
 
 if(NOT TARGET dplm17)
@@ -14,4 +14,8 @@ if(NOT TARGET dplmrts)
   add_subdirectory(dplmrts ${CMAKE_BINARY_DIR}/dpl/dplmrts)
 endif()
 
-add_custom_target(dpl DEPENDS dplbbp dplmrts)
+add_custom_target(dpl DEPENDS
+  dplp
+  dplm17
+  dplmrts
+)

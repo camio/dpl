@@ -1,10 +1,10 @@
-#ifndef DPLBBP_PROMISE_INCLUDED
-#define DPLBBP_PROMISE_INCLUDED
+#ifndef DPLP_PROMISE_INCLUDED
+#define DPLP_PROMISE_INCLUDED
 
 #include <dplmrts_invocable.h>
 #include <dplmrts_invocablearchetype.h>
-#include <dplbbp_anypromise.h>
-#include <dplbbp_resolver.h>
+#include <dplp_anypromise.h>
+#include <dplp_resolver.h>
 #include <dplm17_variant.h>
 #include <dplmrts_anytuple.h>
 
@@ -17,7 +17,7 @@
 #include <type_traits> // std::is_same, std::result_of, std::is_void
 #include <vector>
 
-namespace dplbbp {
+namespace dplp {
 
 // 'Promise_TupleContinuationThenResult' is a type function that, when given a
 // tuple type, returns a promise type that has fufillment types that match the
@@ -25,7 +25,7 @@ namespace dplbbp {
 template <typename T> struct Promise_TupleContinuationThenResultImp {};
 template <typename... T>
 struct Promise_TupleContinuationThenResultImp<std::tuple<T...>> {
-  using type = dplbbp::promise<T...>;
+  using type = dplp::promise<T...>;
 };
 template <dplmrts::AnyTuple T>
 using Promise_TupleContinuationThenResult =
@@ -83,7 +83,7 @@ public:
   // Note that neither the reject nor resolve functions need be called from
   // within 'resolver'. 'resolver' could, for example, store these functions
   // elsewhere to be called at a later time.
-  promise(dplbbp::Resolver<Types...> resolver);
+  promise(dplp::Resolver<Types...> resolver);
 
   // Return a new promise that, upon the fulfilment of this promise, will be
   // fulfilled with the result of the specified 'fulfilledCont' function or,
@@ -161,7 +161,7 @@ public:
        RejectedCont rejectedCont) // Two-argument version of case #3
       requires
       // promise return type
-      dplbbp::AnyPromise<std::result_of_t<FulfilledCont(Types...)>> &&
+      dplp::AnyPromise<std::result_of_t<FulfilledCont(Types...)>> &&
 
       // 'fulfilledCont' and 'rejectedCont' have matching return values
       std::experimental::is_same_v<
@@ -173,7 +173,7 @@ public:
   then(FulfilledCont fulfilledCont) // One-argument version of case #3
       requires
       // promise return type
-      dplbbp::AnyPromise<std::result_of_t<FulfilledCont(Types...)>>;
+      dplp::AnyPromise<std::result_of_t<FulfilledCont(Types...)>>;
 
   template <dplmrts::Invocable<Types...> FulfilledCont,
             dplmrts::Invocable<std::exception_ptr> RejectedCont>
@@ -189,7 +189,7 @@ public:
       !dplmrts::AnyTuple<std::result_of_t<FulfilledCont(Types...)>> &&
 
       // non-promise return type
-      !dplbbp::AnyPromise<std::result_of_t<FulfilledCont(Types...)>> &&
+      !dplp::AnyPromise<std::result_of_t<FulfilledCont(Types...)>> &&
 
       // 'fulfilledCont' and 'rejectedCont' have matching return values
       std::experimental::is_same_v<
@@ -208,7 +208,7 @@ public:
       !dplmrts::AnyTuple<std::result_of_t<FulfilledCont(Types...)>> &&
 
       // non-promise return type
-      !dplbbp::AnyPromise<std::result_of_t<FulfilledCont(Types...)>>;
+      !dplp::AnyPromise<std::result_of_t<FulfilledCont(Types...)>>;
 
   // Return a promise with the specified types that is fulfilled with the
   // specified 'values'.
@@ -231,7 +231,7 @@ private:
 // ============================================================================
 
 template <typename... Types>
-promise<Types...>::promise(dplbbp::Resolver<Types...> resolver) : d_data(std::make_shared<data>())
+promise<Types...>::promise(dplp::Resolver<Types...> resolver) : d_data(std::make_shared<data>())
 {
   // Set 'fulfil' to the fulfilment function. Note that it, as well as
   // reject, keeps its own shared pointer to 'd_data'.
@@ -504,7 +504,7 @@ promise<Types...>::then(FulfilledCont fulfilledCont,
      RejectedCont rejectedCont) // Two-argument version of case #3
     requires
     // promise return type
-    dplbbp::AnyPromise<std::result_of_t<FulfilledCont(Types...)>> &&
+    dplp::AnyPromise<std::result_of_t<FulfilledCont(Types...)>> &&
 
     // 'fulfilledCont' and 'rejectedCont' have matching return values
     std::experimental::is_same_v<
@@ -585,7 +585,7 @@ std::result_of_t<FulfilledCont(Types...)>
 promise<Types...>::then(FulfilledCont fulfilledCont) // One-argument version of case #3
     requires
     // promise return type
-    dplbbp::AnyPromise<std::result_of_t<FulfilledCont(Types...)>> {
+    dplp::AnyPromise<std::result_of_t<FulfilledCont(Types...)>> {
   using Result = std::result_of_t<FulfilledCont(Types...)>;
 
   if (std::vector<std::pair<std::function<void(Types...)>,
@@ -650,7 +650,7 @@ template <dplmrts::Invocable<Types...> FulfilledCont,
     !dplmrts::AnyTuple<std::result_of_t<FulfilledCont(Types...)>> &&
 
     // non-promise return type
-    !dplbbp::AnyPromise<std::result_of_t<FulfilledCont(Types...)>> &&
+    !dplp::AnyPromise<std::result_of_t<FulfilledCont(Types...)>> &&
 
     // 'fulfilledCont' and 'rejectedCont' have matching return values
     std::experimental::is_same_v<
@@ -724,7 +724,7 @@ template <dplmrts::Invocable<Types...> FulfilledCont>
     !dplmrts::AnyTuple<std::result_of_t<FulfilledCont(Types...)>> &&
 
     // non-promise return type
-    !dplbbp::AnyPromise<std::result_of_t<FulfilledCont(Types...)>> {
+    !dplp::AnyPromise<std::result_of_t<FulfilledCont(Types...)>> {
   using U = std::result_of_t<FulfilledCont(Types...)>;
 
   if (std::vector<std::pair<std::function<void(Types...)>,

@@ -1,7 +1,7 @@
-#ifndef BPLBBP_ANYPROMISE_INCLUDED
-#define BPLBBP_ANYPROMISE_INCLUDED
+#ifndef DPLP_ANYPROMISE_INCLUDED
+#define DPLP_ANYPROMISE_INCLUDED
 
-namespace dplbbp {
+namespace dplp {
 template <typename... Types> class promise;
 
 template <typename T>
