@@ -1,3 +1,6 @@
+#ifndef DPLM17_VARIANT_INCLUDED
+#define DPLM17_VARIANT_INCLUDED
+
 // -*- C++ -*-
 // Copyright (c) 2015, Just Software Solutions Ltd
 // All rights reserved.
@@ -33,8 +36,6 @@
 // CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR
 // OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE,
 // EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-#ifndef _JSS_EXPERIMENTAL_VARIANT_HEADER
-#define _JSS_EXPERIMENTAL_VARIANT_HEADER
 #include <stddef.h>
 #include <stdexcept>
 #include <string>

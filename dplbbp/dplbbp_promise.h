@@ -1,5 +1,5 @@
-#ifndef BBP_PROMISE_INCLUDED
-#define BBP_PROMISE_INCLUDED
+#ifndef DPLBBP_PROMISE_INCLUDED
+#define DPLBBP_PROMISE_INCLUDED
 
 #include <dplmrts_invocable.h>
 #include <dplmrts_invocablearchetype.h>
