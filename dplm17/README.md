@@ -1,10 +1,35 @@
-# dpl_m17
-
-**MNEMONIC:** David's primitive library (DPL) Missing C++ 17 (m17)
+# `dplm17`
 
 **PURPOSE:** Provide some C++17 library components.
 
-- **dplm17_variant.h**. An implementation of the standard `<variant>` header.
-  This differs from the specification in that the namespace used is `dplm17`
-  instead of `std`.  This is derived from a copy of Anthony Williams's
-  'std::variant' implementation. See the code for copywrite information.
+**MNEMONIC:** David's primitive library (dpl) Missing C++ 17 (m17)
+
+**AUTHOR:** David Sankel (dsankel)
+
+## Description
+
+The `dplm17` package provides libraries that are expected to be included in the
+upcoming C++17 standard, but are not yet widely distributed with standard
+library implementations. Currently, the only component included in this package
+is `dplm17_variant`.
+
+Documentation for `variant` can be found by searching google for
+`std::variant`.
+
+## Hierarchical Synopsis
+
+The `dplm17` package currently has 1 component having 1 level of physical
+dependency.
+
+```
+1. dplm17_variant
+```
+
+## Component Synopsis
+
+* `dplm17_variant`. Provide A C++17 compliant `<variant>` header.
+
+## Source Origins
+
+The `dplm17_variant` component includes source code originally written by
+Anthony Williams. That particular component has a MIT-style license.
