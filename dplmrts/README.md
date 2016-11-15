@@ -8,7 +8,7 @@
 
 ## Description
 
-The `dplmrts` package provides libraries that are expected to be included now,
+The `dplmrts` package provides components that are expected to be included now,
 or eventually, in the Ranges TS. The Ranges TS includes components that make
 good use of the Concepts TS language feature. This package provides only a
 subset of the functionality in the Ranges TS.

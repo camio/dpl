@@ -1,12 +1,17 @@
-# Promise Library
+# `dplp`
 
 **PURPOSE:** Provide a promise vocabulary type for asynchronous applications.
 
-Files:
+**MNEMONIC:** David's primitive library (dpl) promises (p)
 
-- **dplp_promise.h**. Contains the `dplp::promise` class.
-- **dplp_promise.t.cpp**. Test driver for the above component. Uses
-  `gtest`.
+**AUTHOR:** David Sankel (dsankel)
+
+## Description
+
+The `dplp` package provides components that comprise a vocabulary type,
+`dplp::Promise`, which can be used to develop asynchronous applications in a
+highly composable way. The `dplp_promise` component contains the core of this
+functionality.
 
 Promises are intended to be used as the result of asynchronous operations and
 can be chained together in various ways. It is modeled after the JavaScript
@@ -57,37 +62,26 @@ requestPromise
 myServer.run();
 ```
 
-## Building
+## Hierarchical Synopsis
 
-This can be built with GCC 6.2 and a recent version of `gtest`. To get such an environment on a Bloomberg Linux machine, such as apinjdev02, add something like the following to your `~/.bash_profile`,
+The `dplp` package currently has 3 components having 2 levels of physical
+dependency.
 
-```bash
-# GCC
-export PATH=/home/dsankel/bs/opt/gcc/bin:$PATH
-export LD_LIBRARY_PATH=/home/dsankel/bs/opt/gcc/lib64:/home/dsankel/bs/opt/gccdeps/lib:$LD_LIBRARY_PATH
-export MANPATH=/home/dsankel/bs/opt/gcc/share/man:$MANPATH
-export INFOPATH=/home/dsankel/bs/opt/gcc/share/info:$INFOPATH
+```
+2. dplp_promise
 
-# Google Test
-export LIBRARY_PATH=/home/dsankel/bs/opt/gtest/lib:$LIBRARY_PATH
-export CPATH=/home/dsankel/bs/opt/gtest/include:$CPATH
-export PKG_CONFIG_PATH=/home/dsankel/bs/opt/gtest/lib/pkgconfig:$PKG_CONFIG_PATH
+1. dplp_anypromise dplp_resolver
 ```
 
-, and then build with the following command,
+## Component Synopsis
 
-```bash
-CXX=g++-6.2 make
-```
+* `dplp_anypromise`.
+* `dplp_promise`.
+* `dplp_resolver`.
 
-. This will build and run the unit tests.
-
-## TODO's
+## TODO
 
 ### Priority 1
-- Make the 'then' function and the 'resolve' and 'reject' functions generated
-  in the constructor thread safe. I think, in essence, d_data and all it points
-  to needs to be protected with a mutex.
 - Make all the comments follow the signatures in BDE style.
 - Look at other ways to make this more closely follow the BDE style.
 - Consider how to properly handle cv qualifiers in continuation return types.
