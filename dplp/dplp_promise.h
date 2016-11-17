@@ -13,8 +13,8 @@
 
 #include <exception> // std::exception_ptr
 #include <functional> // std::function, std::invoke
-#include <tuple>       // std::invoke, std::tuple
-#include <type_traits> // std::is_same, std::result_of, std::is_void
+#include <tuple>       // std::tuple
+#include <type_traits> // std::result_of_t
 #include <vector>
 
 namespace dplp {
