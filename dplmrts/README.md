@@ -28,5 +28,5 @@ dependency.
 ## Component Synopsis
 
 * `dplmrts_anytuple`. Provide a concept that is satisfied by tuple types.
-* `dplmrts_invocable`.
+* `dplmrts_invocable`. Provide a concept that is satisfied by invocable types.
 * `dplmrts_invocablearchetype`.
