@@ -14,7 +14,7 @@ have been released in the form of a technical specification (TS).
 
 ## Hierarchical Synopsis
 
-the `dpl` package group currently has 3 packages having 2 levels of physical
+The `dpl` package group currently has 3 packages having 2 levels of physical
 dependency. The list below shows the hierarchical ordering of the packages.
 
 ```
@@ -26,8 +26,8 @@ dependency. The list below shows the hierarchical ordering of the packages.
 
 ## Package Overview
 
-This section a brief introduction to the packages of the `dpl` package group.
-See the respective Package Level documents for more details.
+This section is a brief introduction to the packages of the `dpl` package
+group.  See the respective Package Level documents for more details.
 
 ### `dplm17`
 
