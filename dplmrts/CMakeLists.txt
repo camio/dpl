@@ -15,3 +15,6 @@ target_link_libraries(dplmrts_anytuple.t dplmrts GTest::GTest)
 
 add_executable(dplmrts_invocable.t dplmrts_invocable.t.cpp)
 target_link_libraries(dplmrts_invocable.t dplmrts GTest::GTest)
+
+add_executable(dplmrts_invocablearchetype.t dplmrts_invocablearchetype.t.cpp)
+target_link_libraries(dplmrts_invocablearchetype.t dplmrts GTest::GTest)
