@@ -36,6 +36,13 @@ upcoming C++17 standard, but are not yet widely distributed with standard
 library implementations. Currently, the only component included in this package
 is `dplm17_variant`.
 
+### `dplm20`
+
+The `dplm20` package provides libraries that are expected to be included in the
+upcoming C++20 standard, but are not yet widely distributed with standard
+library implementations. Currently, the only component included in this package
+is `dplm20_overload`.
+
 ### `dplmrts`
 
 The `dplmrts` package provides components that are expected to be included now,
