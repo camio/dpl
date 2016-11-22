@@ -75,7 +75,7 @@ dependency.
 
 ## Component Synopsis
 
-* `dplp_anypromise`.
+* `dplp_anypromise`. Provide a concept that is satisfied by promise types.
 * `dplp_promise`.
 * `dplp_resolver`.
 

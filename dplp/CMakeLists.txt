@@ -22,9 +22,8 @@ target_link_libraries(dplp PUBLIC
   dplmrts
 )
 
+add_executable(dplp_anypromise.t dplp_anypromise.t.cpp)
+target_link_libraries(dplp_anypromise.t dplp GTest::GTest)
+
 add_executable(dplp_promise.t dplp_promise.t.cpp)
-target_link_libraries(dplp_promise.t
-  dplp
-  dplm17
-  GTest::GTest
-)
+target_link_libraries(dplp_promise.t dplp dplm17 GTest::GTest)
