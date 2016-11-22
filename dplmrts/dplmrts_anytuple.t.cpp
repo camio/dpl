@@ -1,7 +1,17 @@
 #include <dplmrts_anytuple.h>
 
 #include <gtest/gtest.h>
+#include <tuple>
 #include <vector>
+
+TEST(dplmrts_anytuple, basic) {
+  EXPECT_EQ((dplmrts::AnyTuple<std::tuple<int>>), true)
+      << "tuple<int> not detected as a tuple";
+  EXPECT_EQ((dplmrts::AnyTuple<std::tuple<int, std::string>>), true)
+      << "tuple<int,string> not detected as a tuple";
+  EXPECT_EQ((dplmrts::AnyTuple<int>), false)
+      << "int detected as a tuple";
+}
 
 namespace {
 template <typename T> concept bool Container = true;
