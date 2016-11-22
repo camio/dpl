@@ -78,5 +78,4 @@ CXX=g++-6.2 cmake /path/to/source
 make -j4
 ```
 
-. There is currently no automated way to run the unit tests although they can
-always be executed directly.
+. The unit tests can be built and invoked using 'ctest'.
