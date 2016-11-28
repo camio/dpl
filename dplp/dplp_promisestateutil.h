@@ -8,14 +8,8 @@
 namespace dplp {
 
 class PromiseStateUtil {
-  // TODO: Move these elsewhere.
-  static constexpr std::size_t waiting_state = 0; // Not fulfilled yet.
-
-  static constexpr std::size_t fulfilled_state = 1; // Fulfilled with a
-                                                    // sequence of values.
-
-  static constexpr std::size_t rejected_state = 2; // Rejected with an
-                                                   // exception.
+  // This is a utility class that implements the core promise state operations:
+  // 'fulfill', 'reject', and 'postContinuations'.
 
   // Move the specified 'promiseStateInWaiting' to the fulfilled state with the
   // specified 'fulfillValues'. Call the 'first' of all the waiting functions
@@ -49,12 +43,14 @@ template <typename... T>
 void PromiseStateUtil::fulfill(
     dplp::PromiseState<T...> *const promiseStateInWaiting, T... fulfillValues) {
   // Call all the waiting functions with the fulfill values.
-  for (auto &&pf : dplm17::get<waiting_state>(promiseStateInWaiting->d_state))
+  for (auto &&pf :
+       dplm17::get<PromiseStateWaiting<T...>>(promiseStateInWaiting->d_state)
+           .d_continuations)
     pf.first(fulfillValues...);
 
   // Move to the fulfilled state
-  promiseStateInWaiting->d_state.template emplace<fulfilled_state>(
-      std::move(fulfillValues)...);
+  promiseStateInWaiting->d_state =
+      PromiseStateFulfilled<T...>{{std::move(fulfillValues)...}};
 }
 
 template <typename... T>
@@ -62,31 +58,32 @@ void PromiseStateUtil::reject(
     dplp::PromiseState<T...> *const promiseStateInWaiting,
     std::exception_ptr error) {
   // Call all the waiting functions with the exception.
-  for (auto &&pf : dplm17::get<waiting_state>(promiseStateInWaiting->d_state))
+  for (auto &&pf :
+       dplm17::get<PromiseStateWaiting<T...>>(promiseStateInWaiting->d_state)
+           .d_continuations)
     pf.second(error);
 
   // Move to the rejected state.
-  promiseStateInWaiting->d_state.template emplace<rejected_state>(
-      std::move(error));
+  promiseStateInWaiting->d_state = PromiseStateRejected{std::move(error)};
 }
 
 template <typename FulfilledCont, typename RejectedCont, typename... Types>
 void PromiseStateUtil::postContinuations(
     dplp::PromiseState<Types...> *const promiseState,
     FulfilledCont fulfilledCont, RejectedCont rejectedCont) {
-  if (std::vector<std::pair<std::function<void(Types...)>,
-                            std::function<void(std::exception_ptr)>>>
-          *const waitingFunctions =
-              dplm17::get_if<waiting_state>(promiseState->d_state)) {
-    waitingFunctions->emplace_back(std::move(fulfilledCont),
-                                   std::move(rejectedCont));
-  } else if (std::tuple<Types...> const *const fulfilledValues =
-                 dplm17::get_if<fulfilled_state>(promiseState->d_state)) {
-    std::experimental::apply(std::move(fulfilledCont), *fulfilledValues);
+  if (PromiseStateWaiting<Types...> *const waitingState =
+          dplm17::get_if<PromiseStateWaiting<Types...>>(
+              promiseState->d_state)) {
+    waitingState->d_continuations.emplace_back(std::move(fulfilledCont),
+                                                std::move(rejectedCont));
+  } else if (PromiseStateFulfilled<Types...> const *const fulfilledState =
+                 dplm17::get_if<PromiseStateFulfilled<Types...>>(
+                     promiseState->d_state)) {
+    std::experimental::apply(std::move(fulfilledCont), fulfilledState->d_values);
   } else {
-    const std::exception_ptr &rejectedException =
-        dplm17::get<rejected_state>(promiseState->d_state);
-    std::invoke(std::move(rejectedCont), rejectedException);
+    const PromiseStateRejected &rejectedState =
+        dplm17::get<PromiseStateRejected>(promiseState->d_state);
+    std::invoke(std::move(rejectedCont), rejectedState.d_error);
   }
 }
 }
