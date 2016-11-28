@@ -1,7 +1,8 @@
 #ifndef INCLUDED_DPLP_PROMISESTATEUTIL
 #define INCLUDED_DPLP_PROMISESTATEUTIL
 
-#include <dplm17_variant.h> // dplm17::get
+#include <dplm17_variant.h> // dplm17::get, dplm17::visit
+#include <dplm20_overload.h>
 #include <dplp_promisestate.h>
 #include <experimental/tuple> // std::experimental::apply
 
@@ -71,20 +72,20 @@ template <typename FulfilledCont, typename RejectedCont, typename... Types>
 void PromiseStateUtil::postContinuations(
     dplp::PromiseState<Types...> *const promiseState,
     FulfilledCont fulfilledCont, RejectedCont rejectedCont) {
-  if (PromiseStateWaiting<Types...> *const waitingState =
-          dplm17::get_if<PromiseStateWaiting<Types...>>(
-              promiseState->d_state)) {
-    waitingState->d_continuations.emplace_back(std::move(fulfilledCont),
-                                                std::move(rejectedCont));
-  } else if (PromiseStateFulfilled<Types...> const *const fulfilledState =
-                 dplm17::get_if<PromiseStateFulfilled<Types...>>(
-                     promiseState->d_state)) {
-    std::experimental::apply(std::move(fulfilledCont), fulfilledState->d_values);
-  } else {
-    const PromiseStateRejected &rejectedState =
-        dplm17::get<PromiseStateRejected>(promiseState->d_state);
-    std::invoke(std::move(rejectedCont), rejectedState.d_error);
-  }
+  dplm17::visit(dplm20::overload(
+                    [&](PromiseStateWaiting<Types...> &waitingState) {
+                      waitingState.d_continuations.emplace_back(
+                          std::move(fulfilledCont), std::move(rejectedCont));
+                    },
+                    [&](const PromiseStateFulfilled<Types...> &fulfilledState) {
+                      std::experimental::apply(std::move(fulfilledCont),
+                                               fulfilledState.d_values);
+                    },
+                    [&](const PromiseStateRejected &rejectedState) {
+                      std::invoke(std::move(rejectedCont),
+                                  rejectedState.d_error);
+                    }),
+                promiseState->d_state);
 }
 }
 

@@ -5,6 +5,10 @@ if(NOT TARGET dplm17)
   add_subdirectory(../dplm17 ${CMAKE_BINARY_DIR}/dpl/dplm17)
 endif()
 
+if(NOT TARGET dplm20)
+  add_subdirectory(../dplm20 ${CMAKE_BINARY_DIR}/dpl/dplm20)
+endif()
+
 if(NOT TARGET dplmrts)
   add_subdirectory(../dplmrts ${CMAKE_BINARY_DIR}/dpl/dplmrts)
 endif()
@@ -21,6 +25,7 @@ add_library(dplp
 target_include_directories(dplp PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 target_link_libraries(dplp PUBLIC
   dplm17
+  dplm20
   dplmrts
 )
 
