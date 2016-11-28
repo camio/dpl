@@ -19,7 +19,8 @@ add_library(dplp
   dplp_anypromise.cpp
   dplp_promise.cpp
   dplp_promisestate.cpp
-  dplp_promisestateutil.cpp
+  dplp_promisestateimp.cpp
+  dplp_promisestateimputil.cpp
   dplp_resolver.cpp
 )
 target_include_directories(dplp PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})

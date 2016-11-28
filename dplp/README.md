@@ -64,16 +64,19 @@ myServer.run();
 
 ## Hierarchical Synopsis
 
-The `dplp` package currently has 5 components having 3 levels of physical
+The `dplp` package currently has 6 components having 5 levels of physical
 dependency.
 
 ```
-3. dplp_promise
+5. dplp_promise
 
-2. dplp_promisestateutil
+4. dplp_promisestate
+
+3. dplp_promisestateimputil
+
+2. dplp_promisestateimp
 
 1. dplp_anypromise
-   dplp_promisestate
    dplp_resolver
 ```
 
@@ -82,7 +85,8 @@ dependency.
 * `dplp_anypromise`. Provide a concept that is satisfied by promise types.
 * `dplp_promise`.
 * `dplp_promisestate`.
-* `dplp_promisestateutil`.
+* `dplp_promisestateimp`.
+* `dplp_promisestateimputil`.
 * `dplp_resolver`.
 
 ## TODO

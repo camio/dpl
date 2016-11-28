@@ -5,7 +5,6 @@
 #include <dplmrts_invocablearchetype.h>
 #include <dplp_anypromise.h>
 #include <dplp_promisestate.h>
-#include <dplp_promisestateutil.h>
 #include <dplp_resolver.h>
 #include <dplmrts_anytuple.h>
 
@@ -209,11 +208,11 @@ promise<Types...>::promise(dplp::Resolver<Types...> resolver) : d_data_sp(std::m
   // Set 'fulfil' to the fulfilment function. Note that it, as well as
   // reject, keeps its own shared pointer to 'd_data_sp'.
   auto fulfil = [d_data_sp = this->d_data_sp](Types... fulfillValues) noexcept {
-    dplp::PromiseStateUtil::fulfill(d_data_sp.get(), std::move(fulfillValues)...);
+    d_data_sp->fulfill(std::move(fulfillValues)...);
   };
 
   auto reject = [d_data_sp = this->d_data_sp](std::exception_ptr e) noexcept {
-    dplp::PromiseStateUtil::reject(d_data_sp.get(), std::move(e));
+    d_data_sp->reject(std::move(e));
   };
 
   std::invoke(resolver, std::move(fulfil), std::move(reject));
@@ -237,8 +236,7 @@ promise<> promise<Types...>::then(FulfilledCont fulfilledCont,
     this, fulfilledCont = std::move(fulfilledCont),
     rejectedCont = std::move(rejectedCont)
   ](auto fulfill, auto reject) mutable {
-    dplp::PromiseStateUtil::postContinuations(
-        d_data_sp.get(),
+    d_data_sp->postContinuations(
         [ fulfilledCont = std::move(fulfilledCont), fulfill,
           reject ](Types... t) mutable {
           try {
@@ -269,8 +267,7 @@ promise<> promise<Types...>::then(FulfilledCont fulfilledCont) // One-argument v
 
   return promise<>([ this, fulfilledCont = std::move(fulfilledCont) ](
       auto fulfill, auto reject) mutable {
-    dplp::PromiseStateUtil::postContinuations(
-        d_data_sp.get(),
+    d_data_sp->postContinuations(
         [ fulfilledCont = std::move(fulfilledCont), fulfill,
           reject ](Types... t) mutable {
           try {
@@ -305,8 +302,7 @@ promise<Types...>::then(FulfilledCont fulfilledCont,
     this, fulfilledCont = std::move(fulfilledCont),
     rejectedCont = std::move(rejectedCont)
   ](auto fulfill, auto reject) mutable {
-    dplp::PromiseStateUtil::postContinuations(
-        d_data_sp.get(),
+    d_data_sp->postContinuations(
         [ fulfilledCont = std::move(fulfilledCont), fulfill,
           reject ](Types... t) mutable {
           try {
@@ -339,8 +335,7 @@ promise<Types...>::then(FulfilledCont fulfilledCont) // One-argument version of 
 
   return Result([ this, fulfilledCont = std::move(fulfilledCont) ](
       auto fulfill, auto reject) mutable {
-    dplp::PromiseStateUtil::postContinuations(
-        d_data_sp.get(),
+    d_data_sp->postContinuations(
         [ fulfilledCont = std::move(fulfilledCont), fulfill,
           reject ](Types... t) mutable {
           try {
@@ -373,14 +368,12 @@ promise<Types...>::then(FulfilledCont fulfilledCont,
     this, fulfilledCont = std::move(fulfilledCont),
     rejectedCont = std::move(rejectedCont)
   ](auto fulfill, auto reject) mutable {
-    dplp::PromiseStateUtil::postContinuations(
-        d_data_sp.get(),
+    d_data_sp->postContinuations(
         [ fulfilledCont = std::move(fulfilledCont), fulfill,
           reject ](Types... t) mutable {
           try {
             Result innerPromise = std::invoke(std::move(fulfilledCont), t...);
-            dplp::PromiseStateUtil::postContinuations(innerPromise.d_data_sp.get(),
-                                                      fulfill, reject);
+            innerPromise.d_data_sp->postContinuations(fulfill, reject);
           } catch (...) {
             reject(std::current_exception());
           }
@@ -389,8 +382,7 @@ promise<Types...>::then(FulfilledCont fulfilledCont,
           reject ](std::exception_ptr e) mutable {
           try {
             Result innerPromise = std::invoke(std::move(rejectedCont), e);
-            dplp::PromiseStateUtil::postContinuations(innerPromise.d_data_sp.get(),
-                                                      fulfill, reject);
+            innerPromise.d_data_sp->postContinuations(fulfill, reject);
           } catch (...) {
             reject(std::current_exception());
           }
@@ -409,14 +401,12 @@ promise<Types...>::then(FulfilledCont fulfilledCont) // One-argument version of 
 
   return Result([ this, fulfilledCont = std::move(fulfilledCont) ](
       auto fulfill, auto reject) mutable {
-    dplp::PromiseStateUtil::postContinuations(
-        d_data_sp.get(),
+    d_data_sp->postContinuations(
         [ fulfilledCont = std::move(fulfilledCont), fulfill,
           reject ](Types... t) mutable {
           try {
             Result innerPromise = std::invoke(std::move(fulfilledCont), t...);
-            dplp::PromiseStateUtil::postContinuations(innerPromise.d_data_sp.get(),
-                                                      fulfill, reject);
+            innerPromise.d_data_sp->postContinuations(fulfill, reject);
           } catch (...) {
             reject(std::current_exception());
           }
@@ -452,8 +442,7 @@ template <dplmrts::Invocable<Types...> FulfilledCont,
     this, fulfilledCont = std::move(fulfilledCont),
     rejectedCont = std::move(rejectedCont)
   ](auto fulfill, auto reject) mutable {
-    dplp::PromiseStateUtil::postContinuations(
-        d_data_sp.get(),
+    d_data_sp->postContinuations(
         [ fulfilledCont = std::move(fulfilledCont), fulfill,
           reject ](Types... t) mutable {
           try {
@@ -492,8 +481,7 @@ template <dplmrts::Invocable<Types...> FulfilledCont>
   return promise<U>([
     this, fulfilledCont = std::move(fulfilledCont)
   ](auto fulfill, auto reject) mutable {
-    dplp::PromiseStateUtil::postContinuations(
-        d_data_sp.get(),
+    d_data_sp->postContinuations(
         [ fulfilledCont = std::move(fulfilledCont), fulfill,
           reject ](Types... t) mutable {
           try {
@@ -512,8 +500,7 @@ template <typename... Types>
 template <typename... Types2>
 promise<Types2...> promise<Types...>::fulfill(Types2 &&... values) {
   promise<Types2...> result;
-  dplp::PromiseStateUtil::fulfill(result.d_data_sp.get(),
-                                  std::forward<Types2>(values)...);
+  result.d_data_sp->fulfill(std::forward<Types2>(values)...);
   return result;
 }
 
@@ -521,7 +508,7 @@ template <typename... Types>
 template <typename... Types2>
 promise<Types2...> promise<Types...>::reject(std::exception_ptr error) {
   promise<Types2...> result;
-  dplp::PromiseStateUtil::reject(result.d_data_sp.get(), std::move(error));
+  result.d_data_sp->reject(std::move(error));
   return result;
 }
 
