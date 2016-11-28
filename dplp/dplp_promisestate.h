@@ -13,6 +13,10 @@ namespace dplp {
 
 template <typename... Types>
 struct PromiseStateWaiting {
+  // This class is a value semantic type that implements the internal state of
+  // a promise in the waiting state. The template parameters correspond to the
+  // types of the values this promise contains.
+
   // The waiting state includes a list of functions to be called when
   // fulfilment or rejection occurs.
   std::vector<std::pair<std::function<void(Types...)>,
@@ -22,11 +26,18 @@ struct PromiseStateWaiting {
 
 template <typename... Types>
 struct PromiseStateFulfilled {
+  // This class is a value semantic type that implements the internal state of
+  // a fulfilled promise. The template parameters correspond to the types of
+  // values this promise contains.
+
   // The fulfilled state includes a tuple of the fulfilled values.
   std::tuple<Types...> d_values;
 };
 
 struct PromiseStateRejected {
+  // This class is a value semantic type that implements the internal state of
+  // a rejected promise.
+
   // The rejected state includes an 'exception_ptr'.
   std::exception_ptr d_error;
 };
