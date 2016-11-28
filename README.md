@@ -14,7 +14,7 @@ have been released in the form of a technical specification (TS).
 
 ## Hierarchical Synopsis
 
-The `dpl` package group currently has 3 packages having 2 levels of physical
+The `dpl` package group currently has 4 packages having 2 levels of physical
 dependency. The list below shows the hierarchical ordering of the packages.
 
 ```
