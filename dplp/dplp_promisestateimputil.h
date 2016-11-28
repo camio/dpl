@@ -4,6 +4,7 @@
 #include <dplm17_variant.h> // dplm17::get, dplm17::visit
 #include <dplm20_overload.h>
 #include <dplp_promisestateimp.h>
+
 #include <experimental/tuple> // std::experimental::apply
 
 namespace dplp {
@@ -43,7 +44,8 @@ public:
 
 template <typename... T>
 void PromiseStateImpUtil::fulfill(
-    dplp::PromiseStateImp<T...> *const promiseStateInWaiting, T... fulfillValues) {
+    dplp::PromiseStateImp<T...> *const promiseStateInWaiting,
+    T... fulfillValues) {
   // Call all the waiting functions with the fulfill values.
   for (auto &&pf :
        dplm17::get<PromiseStateImpWaiting<T...>>(promiseStateInWaiting->d_state)
@@ -73,20 +75,20 @@ template <typename FulfilledCont, typename RejectedCont, typename... Types>
 void PromiseStateImpUtil::postContinuations(
     dplp::PromiseStateImp<Types...> *const promiseState,
     FulfilledCont fulfilledCont, RejectedCont rejectedCont) {
-  dplm17::visit(dplm20::overload(
-                    [&](PromiseStateImpWaiting<Types...> &waitingState) {
-                      waitingState.d_continuations.emplace_back(
-                          std::move(fulfilledCont), std::move(rejectedCont));
-                    },
-                    [&](const PromiseStateImpFulfilled<Types...> &fulfilledState) {
-                      std::experimental::apply(std::move(fulfilledCont),
-                                               fulfilledState.d_values);
-                    },
-                    [&](const PromiseStateImpRejected &rejectedState) {
-                      std::invoke(std::move(rejectedCont),
-                                  rejectedState.d_error);
-                    }),
-                promiseState->d_state);
+  dplm17::visit(
+      dplm20::overload(
+          [&](PromiseStateImpWaiting<Types...> &waitingState) {
+            waitingState.d_continuations.emplace_back(std::move(fulfilledCont),
+                                                      std::move(rejectedCont));
+          },
+          [&](const PromiseStateImpFulfilled<Types...> &fulfilledState) {
+            std::experimental::apply(std::move(fulfilledCont),
+                                     fulfilledState.d_values);
+          },
+          [&](const PromiseStateImpRejected &rejectedState) {
+            std::invoke(std::move(rejectedCont), rejectedState.d_error);
+          }),
+      promiseState->d_state);
 }
 }
 

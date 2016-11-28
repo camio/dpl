@@ -1,6 +1,7 @@
 #include <dplm20_overload.h>
 
 #include <gtest/gtest.h>
+
 #include <string>
 
 namespace {

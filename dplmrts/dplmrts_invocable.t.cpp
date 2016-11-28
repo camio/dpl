@@ -1,8 +1,9 @@
 #include <dplmrts_invocable.h>
 
+#include <gtest/gtest.h>
+
 #include <experimental/type_traits> // std::experimental::is_same_v
 #include <functional>               // std::invoke
-#include <gtest/gtest.h>
 #include <type_traits> // std::result_of_t
 #include <vector>
 

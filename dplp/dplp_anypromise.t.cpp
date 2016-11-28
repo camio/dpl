@@ -2,6 +2,7 @@
 
 #include <dplp_promise.h>
 #include <gtest/gtest.h>
+
 #include <string>
 #include <vector>
 
@@ -10,8 +11,7 @@ TEST(dplp_anypromise, basic) {
       << "promise<int> not detected as a promise";
   EXPECT_EQ((dplp::AnyPromise<dplp::promise<int, std::string>>), true)
       << "promise<int,string> not detected as a promise";
-  EXPECT_EQ((dplp::AnyPromise<int>), false)
-      << "int detected as a promise";
+  EXPECT_EQ((dplp::AnyPromise<int>), false) << "int detected as a promise";
 }
 
 namespace {
@@ -32,7 +32,7 @@ TEST(dplp_anypromise, example) {
   EXPECT_EQ(f(std::vector<int>()), 0) << "The wrong overload was selected.";
   EXPECT_EQ(f(std::vector<dplp::promise<int>>()), 1)
       << "The wrong overload was selected.";
-  EXPECT_EQ(f(std::vector<dplp::promise<int,char>>()), 1)
+  EXPECT_EQ(f(std::vector<dplp::promise<int, char>>()), 1)
       << "The wrong overload was selected.";
 }
 

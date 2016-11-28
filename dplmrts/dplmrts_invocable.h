@@ -62,8 +62,7 @@ template <typename F, typename... Types>
 concept bool Invocable = requires(F f, Types... t) {
   std::invoke(f, t...);
 };
-  // This concept is satisified by types that meet the requirements of
-  // `std::invoke`.
-
+// This concept is satisified by types that meet the requirements of
+// `std::invoke`.
 }
 #endif

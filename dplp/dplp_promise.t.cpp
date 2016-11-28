@@ -1,6 +1,8 @@
 #include <dplp_promise.h>
+
 #include <dplm17_variant.h>
 #include <gtest/gtest.h>
+
 #include <string>
 
 TEST(dplp_promise, basic) {
@@ -15,12 +17,12 @@ TEST(dplp_promise, empty_promise) {
 // corresponding promise is an empty promise.
 TEST(dplp_promise, void_then) {
   dplp::promise<> foo = dplp::promise<>([](auto fulfill, auto reject) {
-                         fulfill();
-                       }).then([]() {});
+                          fulfill();
+                        }).then([]() {});
 
   dplp::promise<> bar = dplp::promise<int>([](auto fulfill, auto reject) {
-                         fulfill(3);
-                       }).then([](int) {}, [](std::exception_ptr) {});
+                          fulfill(3);
+                        }).then([](int) {}, [](std::exception_ptr) {});
 }
 
 TEST(dplp_promise, then_two_arg) {
@@ -156,9 +158,9 @@ TEST(dplp_promise, then_promise_promise) {
   }
 
   {
-    dplp::promise<int> p2 =
-        p.then([] { return dplp::promise<>::fulfill(4); },
-               [](std::exception_ptr e) { return dplp::promise<>::fulfill(2); });
+    dplp::promise<int> p2 = p.then(
+        [] { return dplp::promise<>::fulfill(4); },
+        [](std::exception_ptr e) { return dplp::promise<>::fulfill(2); });
 
     bool fulfilled = false;
     p2.then([&fulfilled](int i) {
@@ -177,7 +179,7 @@ TEST(dplp_promise, then_tuple) {
         p.then([] { return std::make_tuple(3, std::string("test")); });
 
     bool fulfilled = false;
-    p2.then([&fulfilled](int i, const std::string & s) {
+    p2.then([&fulfilled](int i, const std::string &s) {
       fulfilled = true;
       EXPECT_EQ(i, 3) << "Unexpected value in fulfilled promise.";
       EXPECT_EQ(s, "test") << "Unexpected value in fulfilled promise.";
@@ -188,13 +190,12 @@ TEST(dplp_promise, then_tuple) {
     dplp::promise<int, std::string> p2 =
         p.then([] { return std::make_tuple(3, std::string("test")); },
                [](std::exception_ptr e) {
-                ADD_FAILURE() << "Unexpected exception thrown.";
-                return std::make_tuple(4, std::string("test2"));
-               }
-               );
+                 ADD_FAILURE() << "Unexpected exception thrown.";
+                 return std::make_tuple(4, std::string("test2"));
+               });
 
     bool fulfilled = false;
-    p2.then([&fulfilled](int i, const std::string & s) {
+    p2.then([&fulfilled](int i, const std::string &s) {
       fulfilled = true;
       EXPECT_EQ(i, 3) << "Unexpected value in fulfilled promise.";
       EXPECT_EQ(s, "test") << "Unexpected value in fulfilled promise.";
@@ -205,9 +206,7 @@ TEST(dplp_promise, then_tuple) {
 
 namespace {
 struct C {
-  int f() const {
-    return 4;
-  }
+  int f() const { return 4; }
 };
 }
 
@@ -220,15 +219,12 @@ TEST(dplp_promise, invoke) {
 
   bool fulfilled = false;
 
-  std::experimental::apply(std::move(&C::f),
-                             std::tuple<C>(C()));
+  std::experimental::apply(std::move(&C::f), std::tuple<C>(C()));
 
-  p.then(&C::f)
-    .then([&fulfilled](int i)
-    {
-      fulfilled = true;
-      EXPECT_EQ(i, 4) << "Unexpected value in fulfilled promise.";
-    } );
+  p.then(&C::f).then([&fulfilled](int i) {
+    fulfilled = true;
+    EXPECT_EQ(i, 4) << "Unexpected value in fulfilled promise.";
+  });
   EXPECT_TRUE(fulfilled) << "Promise wasn't fulfilled.";
 }
 

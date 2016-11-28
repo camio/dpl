@@ -1,6 +1,7 @@
 #include <dplmrts_anytuple.h>
 
 #include <gtest/gtest.h>
+
 #include <tuple>
 #include <vector>
 
@@ -9,8 +10,7 @@ TEST(dplmrts_anytuple, basic) {
       << "tuple<int> not detected as a tuple";
   EXPECT_EQ((dplmrts::AnyTuple<std::tuple<int, std::string>>), true)
       << "tuple<int,string> not detected as a tuple";
-  EXPECT_EQ((dplmrts::AnyTuple<int>), false)
-      << "int detected as a tuple";
+  EXPECT_EQ((dplmrts::AnyTuple<int>), false) << "int detected as a tuple";
 }
 
 namespace {
@@ -31,7 +31,7 @@ TEST(dplmrts_anytuple, example) {
   EXPECT_EQ(f(std::vector<int>()), 0) << "The wrong overload was selected.";
   EXPECT_EQ(f(std::vector<std::tuple<int>>()), 1)
       << "The wrong overload was selected.";
-  EXPECT_EQ(f(std::vector<std::tuple<int,char>>()), 1)
+  EXPECT_EQ(f(std::vector<std::tuple<int, char>>()), 1)
       << "The wrong overload was selected.";
 }
 

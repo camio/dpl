@@ -3,6 +3,7 @@
 
 #include <dplmrts_invocable.h>
 #include <dplmrts_invocablearchetype.h>
+
 #include <exception> // std::exception_ptr
 
 namespace dplp {
@@ -10,8 +11,9 @@ namespace dplp {
 // argument satisfying 'dplmrts::Invocable<Types...>' and their second argument
 // satisfying 'dplmrts::Invocable<std::exception_ptr>'.
 template <typename F, typename... Types>
-concept bool Resolver = dplmrts::Invocable<F, dplmrts::InvocableArchetype<Types...>,
-                                 dplmrts::InvocableArchetype<std::exception_ptr>>;
+concept bool Resolver =
+    dplmrts::Invocable<F, dplmrts::InvocableArchetype<Types...>,
+                       dplmrts::InvocableArchetype<std::exception_ptr>>;
 
 // What follows is an alternate definition of the same concept.
 //

@@ -36,7 +36,8 @@
 // ..
 // Finally, we define the invocable of invocable overload.
 // ..
-//   inline int foo(dplmrts::Invocable<dplmrts::InvocableArchetype<int>> invocable);
+//   inline int foo(
+//       dplmrts::Invocable<dplmrts::InvocableArchetype<int>> invocable);
 // ..
 // If we call 'foo' with an argument of type 'std::function<void
 // (std::function<void (int)> )>', the second overload will be selected.

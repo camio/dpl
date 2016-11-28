@@ -1,6 +1,7 @@
 #include <dplmrts_invocablearchetype.h>
 
 #include <gtest/gtest.h>
+
 #include <functional> // std::function
 #include <string>
 

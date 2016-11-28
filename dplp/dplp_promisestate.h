@@ -3,6 +3,7 @@
 
 #include <dplp_promisestateimp.h>
 #include <dplp_promisestateimputil.h>
+
 #include <utility> // std::move
 
 namespace dplp {
