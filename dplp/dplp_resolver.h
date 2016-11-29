@@ -51,7 +51,7 @@
 // constructor.
 //..
 //  template<typename T>
-//  dplp::promise<T> makePromise(dplp::Resolver<T> r) {
+//  dplp::Promise<T> makePromise(dplp::Resolver<T> r) {
 //    return dplp::Promise<T>(r);
 //  }
 //..

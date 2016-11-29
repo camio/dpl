@@ -11,7 +11,7 @@
 //@AUTHOR: David Sankel (dsankel@bloomberg.net)
 //
 //@DESCRIPTION: This component provides a concept that is satisfied by any
-// 'dplp::promise' type. This is intended to be used to help aid SFINE when the
+// 'dplp::Promise' type. This is intended to be used to help aid SFINE when the
 // "promisness" of a type needs to be queried on the result of a metafunction.
 //
 // Note that this component depends "in name only" on dplp_promise.
@@ -40,11 +40,11 @@
 //..
 
 namespace dplp {
-template <typename... Types> class promise;
+template <typename... Types> class Promise;
 
 template <typename T>
-concept bool AnyPromise = requires(T t){{t}->promise<auto...>};
-// This concept is satisified by `dplp::promise` template instantiations.
+concept bool AnyPromise = requires(T t){{t}->Promise<auto...>};
+// This concept is satisified by `dplp::Promise` template instantiations.
 }
 
 #endif

@@ -24,22 +24,22 @@ to a database, and sends the response back to the server.
 ```c++
 server myServer;
 
-dplp::promise<Request> requestPromise = myServer.getPendingRequest(/*...*/);
+dplp::Promise<Request> requestPromise = myServer.getPendingRequest(/*...*/);
 
 requestPromise
 .then( [](Request request){
   if(request.wantsDatabaseName()) {
     return lookupInDatabase(/*...*/); // 'lookupInDatabase' returns
-                                      // 'promise<std::string>'
+                                      // 'Promise<std::string>'
   } else {
     assert(request.wantsHardcodedName());
-    // 'fulfill' also returns a 'promise<std::string>'.
-    return dplp::promise<>::fulfill(std::string("Joe"));
+    // 'fulfill' also returns a 'Promise<std::string>'.
+    return dplp::Promise<>::fulfill(std::string("Joe"));
   }
 })
 .then( [myServer&](std::string s) {
   return myServer.sendResponse(s); // 'sendResponse' returns a
-                                   // 'promise<>'.
+                                   // 'Promise<>'.
 })
 // Here we use the two-argument version of 'then'.
 .then( [myServer&]{
@@ -108,7 +108,7 @@ dependency.
 - Consider what happens when the 'fufil' and 'reject' functions passed to the
   resolver throw an exception. We need to properly support this.
 - Make the 'fulfil' and 'reject' functions which are passed to the 'resolver'
-  in the 'promise' constructor release their reference to 'd_data' when one of
+  in the 'Promise' constructor release their reference to 'd_data' when one of
   the two is called. The only way that I can think of doing this is to make a
   `shared_ptr<shared_ptr<data>>` object that both of those functions reference.
   At the first call, the "inner" shared pointer is made null. Unit tests

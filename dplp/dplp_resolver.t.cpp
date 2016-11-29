@@ -18,13 +18,13 @@ TEST(dplp_resolver, basic) {
 }
 
 namespace {
-template <typename T> dplp::promise<T> makePromise(dplp::Resolver<T> r) {
-  return dplp::promise<T>(r);
+template <typename T> dplp::Promise<T> makePromise(dplp::Resolver<T> r) {
+  return dplp::Promise<T>(r);
 }
 }
 
 TEST(dplp_resolver, example) {
-  dplp::promise<int> r = makePromise<int>(
+  dplp::Promise<int> r = makePromise<int>(
       [](dplmrts::Invocable<int> fulfill,
          dplmrts::Invocable<std::exception_ptr> reject) { fulfill(3); });
   bool fulfilled = false;
