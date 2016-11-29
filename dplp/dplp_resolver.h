@@ -1,5 +1,5 @@
-#ifndef DPLP_RESOLVER_INCLUDED
-#define DPLP_RESOLVER_INCLUDED
+#ifndef INCLUDED_DPLP_RESOLVER
+#define INCLUDED_DPLP_RESOLVER
 
 //@PURPOSE: Provide a concept that is satisfied by promise resolver functions.
 //

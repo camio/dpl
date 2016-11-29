@@ -1,5 +1,5 @@
-#ifndef DPLMRTS_INVOCABLE_INCLUDED
-#define DPLMRTS_INVOCABLE_INCLUDED
+#ifndef INCLUDED_DPLMRTS_INVOCABLE
+#define INCLUDED_DPLMRTS_INVOCABLE
 
 //@PURPOSE: Provide a concept that is satisfied by invocable types.
 //

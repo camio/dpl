@@ -1,5 +1,5 @@
-#ifndef DPLM17_VARIANT_INCLUDED
-#define DPLM17_VARIANT_INCLUDED
+#ifndef INCLUDED_DPLM17_VARIANT
+#define INCLUDED_DPLM17_VARIANT
 
 // -*- C++ -*-
 // Copyright (c) 2015, Just Software Solutions Ltd

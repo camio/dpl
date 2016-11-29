@@ -1,5 +1,5 @@
-#ifndef DPLP_PROMISE_INCLUDED
-#define DPLP_PROMISE_INCLUDED
+#ifndef INCLUDED_DPLP_PROMISE
+#define INCLUDED_DPLP_PROMISE
 
 #include <dplmrts_anytuple.h>
 #include <dplmrts_invocable.h>

@@ -7,8 +7,8 @@
 //
 //////////////////////////////////////////////////////////////////////////////
 
-#ifndef JASEL_FUNDAMENTAL_V3_FUNCTIONAL_OVERLOAD_HPP
-#define JASEL_FUNDAMENTAL_V3_FUNCTIONAL_OVERLOAD_HPP
+#ifndef INCLUDED_DPLM20_OVERLOAD
+#define INCLUDED_DPLM20_OVERLOAD
 
 #if __cplusplus >= 201402L
 

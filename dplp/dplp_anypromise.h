@@ -1,5 +1,5 @@
-#ifndef DPLP_ANYPROMISE_INCLUDED
-#define DPLP_ANYPROMISE_INCLUDED
+#ifndef INCLUDED_DPLP_ANYPROMISE
+#define INCLUDED_DPLP_ANYPROMISE
 
 //@PURPOSE: Provide a concept that is satisfied by promise types.
 //
