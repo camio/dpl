@@ -5,6 +5,7 @@
 
 #include <exception>  // std::exception_ptr
 #include <functional> // std::function
+#include <mutex>      // std::mutex
 #include <tuple>      // std::tuple
 #include <utility>    // std::pair
 #include <vector>
@@ -48,6 +49,8 @@ template <typename... Types> struct PromiseStateImp {
   dplm17::variant<PromiseStateImpWaiting<Types...>,
                   PromiseStateImpFulfilled<Types...>, PromiseStateImpRejected>
       d_state;
+
+  std::mutex d_mutex;
 };
 }
 
