@@ -4,8 +4,11 @@ project(dplmrts)
 find_package(GTest REQUIRED)
 
 add_library(dplmrts
+  dplmrts_anytuple.h
   dplmrts_anytuple.cpp
+  dplmrts_invocable.h
   dplmrts_invocable.cpp
+  dplmrts_invocablearchetype.h
   dplmrts_invocablearchetype.cpp
 )
 target_include_directories(dplmrts PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})

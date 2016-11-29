@@ -3,7 +3,10 @@ project(dplm20)
 
 find_package(GTest REQUIRED)
 
-add_library(dplm20 dplm20_overload.cpp)
+add_library(dplm20
+  dplm20_overload.h
+  dplm20_overload.cpp
+)
 target_include_directories(dplm20 PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 
 add_executable(dplm20_overload.t dplm20_overload.t.cpp)

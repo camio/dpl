@@ -16,11 +16,17 @@ endif()
 find_package(GTest REQUIRED)
 
 add_library(dplp
+  dplp_anypromise.h
   dplp_anypromise.cpp
+  dplp_promise.h
   dplp_promise.cpp
+  dplp_promisestate.h
   dplp_promisestate.cpp
+  dplp_promisestateimp.h
   dplp_promisestateimp.cpp
+  dplp_promisestateimputil.h
   dplp_promisestateimputil.cpp
+  dplp_resolver.h
   dplp_resolver.cpp
 )
 target_include_directories(dplp PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
