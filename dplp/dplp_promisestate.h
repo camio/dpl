@@ -9,6 +9,9 @@
 namespace dplp {
 
 template <typename... Types> class PromiseState {
+  // TODO: document that the default state is a waiting state.
+  // TODO: document that this class is thread safe.
+
   PromiseStateImp<Types...> d_imp;
 
 public:
