@@ -87,8 +87,9 @@ public:
 
   template <dplmrts::Invocable<Types...> FulfilledCont,
             dplmrts::Invocable<std::exception_ptr> RejectedCont>
-  Promise<> then(FulfilledCont fulfilledCont,
-                 RejectedCont rejectedCont) // Two-argument version of case #1
+  Promise<>
+  then(FulfilledCont fulfilledCont,
+       RejectedCont rejectedCont) const // Two-argument version of case #1
       requires
       // void return type
       std::experimental::is_void_v<std::result_of_t<FulfilledCont(Types...)>> &&
@@ -99,7 +100,8 @@ public:
           std::result_of_t<RejectedCont(std::exception_ptr)>>;
 
   template <dplmrts::Invocable<Types...> FulfilledCont>
-  Promise<> then(FulfilledCont fulfilledCont) // One-argument version of case #1
+  Promise<>
+  then(FulfilledCont fulfilledCont) const // One-argument version of case #1
       requires
       // void return type
       std::experimental::is_void_v<std::result_of_t<FulfilledCont(Types...)>>;
@@ -108,7 +110,7 @@ public:
             dplmrts::Invocable<std::exception_ptr> RejectedCont>
   Promise_TupleContinuationThenResult<std::result_of_t<FulfilledCont(Types...)>>
   then(FulfilledCont fulfilledCont,
-       RejectedCont rejectedCont) // Two-argument version of case #2
+       RejectedCont rejectedCont) const // Two-argument version of case #2
       requires
       // tuple return type
       dplmrts::AnyTuple<std::result_of_t<FulfilledCont(Types...)>> &&
@@ -120,7 +122,7 @@ public:
 
   template <dplmrts::Invocable<Types...> FulfilledCont>
   Promise_TupleContinuationThenResult<std::result_of_t<FulfilledCont(Types...)>>
-  then(FulfilledCont fulfilledCont) // One-argument version of case #2
+  then(FulfilledCont fulfilledCont) const // One-argument version of case #2
       requires
       // tuple return type
       dplmrts::AnyTuple<std::result_of_t<FulfilledCont(Types...)>>;
@@ -129,7 +131,7 @@ public:
             dplmrts::Invocable<std::exception_ptr> RejectedCont>
   std::result_of_t<FulfilledCont(Types...)>
   then(FulfilledCont fulfilledCont,
-       RejectedCont rejectedCont) // Two-argument version of case #3
+       RejectedCont rejectedCont) const // Two-argument version of case #3
       requires
       // promise return type
       dplp::AnyPromise<std::result_of_t<FulfilledCont(Types...)>> &&
@@ -141,7 +143,7 @@ public:
 
   template <dplmrts::Invocable<Types...> FulfilledCont>
   std::result_of_t<FulfilledCont(Types...)>
-  then(FulfilledCont fulfilledCont) // One-argument version of case #3
+  then(FulfilledCont fulfilledCont) const // One-argument version of case #3
       requires
       // promise return type
       dplp::AnyPromise<std::result_of_t<FulfilledCont(Types...)>>;
@@ -150,7 +152,7 @@ public:
             dplmrts::Invocable<std::exception_ptr> RejectedCont>
       Promise<std::result_of_t<FulfilledCont(Types...)>>
       then(FulfilledCont fulfilledCont,
-           RejectedCont rejectedCont) // Two-argument version of case #4
+           RejectedCont rejectedCont) const // Two-argument version of case #4
       requires
       // non-void return type
       !std::experimental::is_void_v<
@@ -169,7 +171,7 @@ public:
 
   template <dplmrts::Invocable<Types...> FulfilledCont>
       Promise<std::result_of_t<FulfilledCont(Types...)>>
-      then(FulfilledCont fulfilledCont) // One-argument version of case #4
+      then(FulfilledCont fulfilledCont) const // One-argument version of case #4
       requires
       // non-void return type
       !std::experimental::is_void_v<
@@ -206,12 +208,12 @@ Promise<Types...>::Promise(dplp::Resolver<Types...> resolver)
     : d_data_sp(std::make_shared<PromiseState<Types...>>()) {
   // Set 'fulfil' to the fulfilment function. Note that it, as well as
   // reject, keeps its own shared pointer to 'd_data_sp'.
-  auto fulfil = [d_data_sp = this->d_data_sp](Types... fulfillValues) noexcept {
-    d_data_sp->fulfill(std::move(fulfillValues)...);
+  auto fulfil = [data_sp = this->d_data_sp](Types... fulfillValues) noexcept {
+    data_sp->fulfill(std::move(fulfillValues)...);
   };
 
-  auto reject = [d_data_sp = this->d_data_sp](std::exception_ptr e) noexcept {
-    d_data_sp->reject(std::move(e));
+  auto reject = [data_sp = this->d_data_sp](std::exception_ptr e) noexcept {
+    data_sp->reject(std::move(e));
   };
 
   std::invoke(resolver, std::move(fulfil), std::move(reject));
@@ -222,7 +224,7 @@ template <dplmrts::Invocable<Types...> FulfilledCont,
           dplmrts::Invocable<std::exception_ptr> RejectedCont>
 Promise<> Promise<Types...>::then(
     FulfilledCont fulfilledCont,
-    RejectedCont rejectedCont) // Two-argument version of case #1
+    RejectedCont rejectedCont) const // Two-argument version of case #1
     requires
     // void return type
     std::experimental::is_void_v<std::result_of_t<FulfilledCont(Types...)>> &&
@@ -261,7 +263,7 @@ Promise<> Promise<Types...>::then(
 template <typename... Types>
 template <dplmrts::Invocable<Types...> FulfilledCont>
 Promise<> Promise<Types...>::then(
-    FulfilledCont fulfilledCont) // One-argument version of case #1
+    FulfilledCont fulfilledCont) const // One-argument version of case #1
     requires
     // void return type
     std::experimental::is_void_v<std::result_of_t<FulfilledCont(Types...)>> {
@@ -288,7 +290,7 @@ template <dplmrts::Invocable<Types...> FulfilledCont,
 Promise_TupleContinuationThenResult<std::result_of_t<FulfilledCont(Types...)>>
 Promise<Types...>::then(
     FulfilledCont fulfilledCont,
-    RejectedCont rejectedCont) // Two-argument version of case #2
+    RejectedCont rejectedCont) const // Two-argument version of case #2
     requires
     // tuple return type
     dplmrts::AnyTuple<std::result_of_t<FulfilledCont(Types...)>> &&
@@ -329,7 +331,7 @@ template <typename... Types>
 template <dplmrts::Invocable<Types...> FulfilledCont>
 Promise_TupleContinuationThenResult<std::result_of_t<FulfilledCont(Types...)>>
 Promise<Types...>::then(
-    FulfilledCont fulfilledCont) // One-argument version of case #2
+    FulfilledCont fulfilledCont) const // One-argument version of case #2
     requires
     // tuple return type
     dplmrts::AnyTuple<std::result_of_t<FulfilledCont(Types...)>> {
@@ -356,7 +358,7 @@ template <dplmrts::Invocable<Types...> FulfilledCont,
           dplmrts::Invocable<std::exception_ptr> RejectedCont>
 std::result_of_t<FulfilledCont(Types...)> Promise<Types...>::then(
     FulfilledCont fulfilledCont,
-    RejectedCont rejectedCont) // Two-argument version of case #3
+    RejectedCont rejectedCont) const // Two-argument version of case #3
     requires
     // promise return type
     dplp::AnyPromise<std::result_of_t<FulfilledCont(Types...)>> &&
@@ -396,7 +398,7 @@ std::result_of_t<FulfilledCont(Types...)> Promise<Types...>::then(
 template <typename... Types>
 template <dplmrts::Invocable<Types...> FulfilledCont>
 std::result_of_t<FulfilledCont(Types...)> Promise<Types...>::then(
-    FulfilledCont fulfilledCont) // One-argument version of case #3
+    FulfilledCont fulfilledCont) const // One-argument version of case #3
     requires
     // promise return type
     dplp::AnyPromise<std::result_of_t<FulfilledCont(Types...)>> {
@@ -423,7 +425,7 @@ template <typename... Types>
               dplmrts::Invocable<std::exception_ptr> RejectedCont>
     Promise<std::result_of_t<FulfilledCont(Types...)>> Promise<Types...>::then(
         FulfilledCont fulfilledCont,
-        RejectedCont rejectedCont) // Two-argument version of case #4
+        RejectedCont rejectedCont) const // Two-argument version of case #4
     requires
     // non-void return type
     !std::experimental::is_void_v<std::result_of_t<FulfilledCont(Types...)>> &&
@@ -467,7 +469,7 @@ template <typename... Types>
 template <typename... Types>
     template <dplmrts::Invocable<Types...> FulfilledCont>
     Promise<std::result_of_t<FulfilledCont(Types...)>> Promise<Types...>::then(
-        FulfilledCont fulfilledCont) // One-argument version of case #4
+        FulfilledCont fulfilledCont) const // One-argument version of case #4
     requires
     // non-void return type
     !std::experimental::is_void_v<std::result_of_t<FulfilledCont(Types...)>> &&
