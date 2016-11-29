@@ -228,13 +228,6 @@ TEST(dplp_promise, invoke) {
   EXPECT_TRUE(fulfilled) << "Promise wasn't fulfilled.";
 }
 
-// TODO: add some tests that interact with asio.
-//       - ASIO_STANDALONE is the definition required.
-// TODO: add test that exceptions in the resolver are rethrown.
-// TODO: add test that in the two-function version the exception handler is
-// called.
-// TODO: Test that promise<std::exception_ptr> works properly.
-
 int main(int argc, char **argv) {
   ::testing::InitGoogleTest(&argc, argv);
   return RUN_ALL_TESTS();

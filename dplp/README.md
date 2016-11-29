@@ -98,7 +98,6 @@ dependency.
 - Consider how to properly handle cv qualifiers in continuation return types.
 
 ### Priority 2
-
 - Add unit tests to verify that callables with move-only call operators are
   supported as continuation functions and resolvers.
 - clean up the test cases now that we have 'fulfilled' and 'rejected' static
@@ -118,6 +117,11 @@ dependency.
 - Carefully go over unit tests to be sure all branches are being tested.
 
 ### Priority 3
+- Add unit tests that verify that exceptions in the resolver are rethrown.
+- Add unit tests that verify that rejection continuations are called properly
+  and that if they throw, it is appropriately handled.
+- Add a unit tests that verifies that `promise<std::exception_ptr>` works
+  properly.
 - Add support for a then result of a 'keep' which keeps the result value no
   matter what its type is.
 - Add cancellation support
