@@ -87,7 +87,8 @@ dependency.
 * `dplp_promisestate`.
 * `dplp_promisestateimp`.
 * `dplp_promisestateimputil`.
-* `dplp_resolver`.
+* `dplp_resolver`. Provide a concept that is satisfied by promise resolver
+  functions.
 
 ## TODO
 

@@ -37,3 +37,7 @@ add_test(NAME dplp_anypromise.t COMMAND dplp_anypromise.t)
 add_executable(dplp_promise.t dplp_promise.t.cpp)
 target_link_libraries(dplp_promise.t dplp dplm17 GTest::GTest)
 add_test(NAME dplp_promise.t COMMAND dplp_promise.t)
+
+add_executable(dplp_resolver.t dplp_resolver.t.cpp)
+target_link_libraries(dplp_resolver.t dplp GTest::GTest)
+add_test(NAME dplp_resolver.t COMMAND dplp_resolver.t)
