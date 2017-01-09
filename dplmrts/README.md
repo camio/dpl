@@ -4,8 +4,6 @@
 
 **MNEMONIC:** David's primitive library (dpl) Missing Ranges TS (mrts)
 
-**AUTHOR:** David Sankel (dsankel)
-
 ## Description
 
 The `dplmrts` package provides components that are expected to be included now,

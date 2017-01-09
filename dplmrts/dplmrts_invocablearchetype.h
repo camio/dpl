@@ -5,8 +5,6 @@
 //
 //@SEE_ALSO: dplmrts_invocable
 //
-//@AUTHOR: David Sankel (dsankel@bloomberg.net)
-//
 //@DESCRIPTION: This component provides a single class template,
 // 'InvocableArchetype', that satisfies the 'Invocable' concept when it has the
 // same template arguments. Archtypes useful when one needs to write a

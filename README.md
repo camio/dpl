@@ -4,8 +4,6 @@
 
 **MNEMONIC:** David's primitive library (dpl)
 
-**AUTHOR:** David Sankel (dsankel)
-
 ## Description
 
 The `dpl` ("David's Primitive Library") package group contains several

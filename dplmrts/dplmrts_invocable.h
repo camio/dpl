@@ -8,8 +8,6 @@
 //
 //@SEE_ALSO: dplmrts_invocablearchetype
 //
-//@AUTHOR: David Sankel (dsankel@bloomberg.net)
-//
 //@DESCRIPTION: This component provides a concept that is satisfied by any
 // invocable type. This is intended to be used to help aid SFINE when the
 // "invocableness" of a type needs to be queried on the result of a

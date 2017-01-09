@@ -4,8 +4,6 @@
 
 **MNEMONIC:** David's primitive library (dpl) Missing C++ 20 (m20)
 
-**AUTHOR:** David Sankel (dsankel)
-
 ## Description
 
 The `dplm20` package provides libraries that are expected to be included in the

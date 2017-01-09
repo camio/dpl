@@ -4,8 +4,6 @@
 
 **MNEMONIC:** David's primitive library (dpl) Missing C++ 17 (m17)
 
-**AUTHOR:** David Sankel (dsankel)
-
 ## Description
 
 The `dplm17` package provides libraries that are expected to be included in the

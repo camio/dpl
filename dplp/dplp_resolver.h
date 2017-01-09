@@ -8,8 +8,6 @@
 //
 //@SEE ALSO: dplp_promise
 //
-//@AUTHOR: David Sankel (dsankel@bloomberg.net)
-//
 //@DESCRIPTION: This component provides a concept that is satisfied by promise
 // resolvers. Promise resolvers are invocable objects that accept two
 // arguments: the first being the 'resolve' function and the second being the

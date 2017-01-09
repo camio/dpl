@@ -4,8 +4,6 @@
 
 **MNEMONIC:** David's primitive library (dpl) promises (p)
 
-**AUTHOR:** David Sankel (dsankel)
-
 ## Description
 
 The `dplp` package provides components that comprise a vocabulary type,

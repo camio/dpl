@@ -8,8 +8,6 @@
 //
 //@SEE ALSO: dplp_promise
 //
-//@AUTHOR: David Sankel (dsankel@bloomberg.net)
-//
 //@DESCRIPTION: This component provides a concept that is satisfied by any
 // 'dplp::Promise' type. This is intended to be used to help aid SFINE when the
 // "promisness" of a type needs to be queried on the result of a metafunction.
