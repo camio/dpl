@@ -60,11 +60,11 @@
 #include <exception>  // std::exception_ptr
 
 namespace dplp {
-// Types that satisfy 'Resolver<Types...>' are callable with their first
-// argument satisfying 'dplmrts::Invocable<Types...>' and their second argument
-// satisfying 'dplmrts::Invocable<std::exception_ptr>'.
 template <typename F, typename... Types>
 concept bool Resolver =
+    // Types that satisfy 'Resolver<Types...>' are callable with their first
+    // argument satisfying 'dplmrts::Invocable<Types...>' and their second
+    // argument satisfying 'dplmrts::Invocable<std::exception_ptr>'.
     dplmrts::Invocable<F,
                        dplmrts::InvocableArchetype<Types...>,
                        dplmrts::InvocableArchetype<std::exception_ptr> >;

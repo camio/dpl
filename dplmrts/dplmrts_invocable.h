@@ -57,11 +57,12 @@
 namespace dplmrts {
 
 template <typename F, typename... Types>
-concept bool Invocable = requires(F f, Types... t)
+concept bool Invocable =
+    // This concept is satisified by types that meet the requirements of
+    // `std::invoke`.
+    requires(F f, Types... t)
 {
     std::invoke(f, t...);
 };
-// This concept is satisified by types that meet the requirements of
-// `std::invoke`.
 }
 #endif

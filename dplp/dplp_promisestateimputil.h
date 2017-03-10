@@ -12,39 +12,37 @@ namespace dplp {
 
 class PromiseStateImpUtil {
     // This is a utility class that implements the core promise state
-    // operations:
-    // 'fulfill', 'reject', and 'postContinuations'. These functions can be
-    // safely called in multiple threads as long as no other threads are
-    // modifying the 'dplp::PromiseStateImp' outside of these functions.
+    // operations: 'fulfill', 'reject', and 'postContinuations'. These
+    // functions can be safely called in multiple threads as long as no other
+    // threads are modifying the 'dplp::PromiseStateImp' outside of these
+    // functions.
     //
     // The implementation takes advantage of the fact that a 'PromiseStateImp',
     // assuming only these functions are used, cannot move to the waiting state
     // if it is already in a fufilled or rejected state.
 
   public:
-    // Move the specified 'promiseStateInWaiting' to the fulfilled state with
-    // the
-    // specified 'fulfillValues'. Call the 'first' of all the waiting functions
-    // with 'fulfillValues'. The 'promiseStateInWaiting' is moved to the
-    // fulfilled
-    // state before the waiting functions are called. The behavior is undefined
-    // unless the specified 'promiseStateInWaiting' is in the waiting state.
     template <typename... T>
     static void
     fulfill(dplp::PromiseStateImp<T...> *const promiseStateInWaiting,
             T...                               fulfillValues);
+        // Move the specified 'promiseStateInWaiting' to the fulfilled state
+        // with the specified 'fulfillValues'. Call the 'first' of all the
+        // waiting functions with 'fulfillValues'. The 'promiseStateInWaiting'
+        // is moved to the fulfilled state before the waiting functions are
+        // called. The behavior is undefined unless the specified
+        // 'promiseStateInWaiting' is in the waiting state.
 
-    // Move the specified 'promiseStateInWaiting' to the rejected state with
-    // the
-    // specified 'error'. Call the 'second' of all the waiting functions with
-    // 'error'. The 'promiseStateInWaiting' is moved to the fulfilled state
-    // before the waiting functions are called. The behavior is undefined
-    // unless
-    // the specified 'promiseStateInWaiting' is in the waiting state.
     template <typename... T>
     static void
     reject(dplp::PromiseStateImp<T...> *const promiseStateInWaiting,
            std::exception_ptr                 error);
+        // Move the specified 'promiseStateInWaiting' to the rejected state
+        // with the specified 'error'. Call the 'second' of all the waiting
+        // functions with 'error'. The 'promiseStateInWaiting' is moved to the
+        // fulfilled state before the waiting functions are called. The
+        // behavior is undefined unless the specified 'promiseStateInWaiting'
+        // is in the waiting state.
 
     template <typename FulfilledCont, typename RejectedCont, typename... Types>
     static void

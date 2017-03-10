@@ -91,8 +91,7 @@ dependency.
 ## TODO
 
 ### Priority 1
-- Make all the comments follow the signatures in BDE style.
-- Look at other ways to make this more closely follow the BDE style.
+- Complete documentation for all components.
 - Consider how to properly handle cv qualifiers in continuation return types.
 
 ### Priority 2
