@@ -38,7 +38,8 @@
 //..
 
 namespace dplp {
-template <typename... Types> class Promise;
+template <typename... Types>
+class Promise;
 
 template <typename T>
 concept bool AnyPromise = requires(T t){{t}->Promise<auto...>};

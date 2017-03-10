@@ -57,7 +57,7 @@
 #include <dplmrts_invocable.h>
 #include <dplmrts_invocablearchetype.h>
 
-#include <exception> // std::exception_ptr
+#include <exception>  // std::exception_ptr
 
 namespace dplp {
 // Types that satisfy 'Resolver<Types...>' are callable with their first
@@ -65,8 +65,9 @@ namespace dplp {
 // satisfying 'dplmrts::Invocable<std::exception_ptr>'.
 template <typename F, typename... Types>
 concept bool Resolver =
-    dplmrts::Invocable<F, dplmrts::InvocableArchetype<Types...>,
-                       dplmrts::InvocableArchetype<std::exception_ptr>>;
+    dplmrts::Invocable<F,
+                       dplmrts::InvocableArchetype<Types...>,
+                       dplmrts::InvocableArchetype<std::exception_ptr> >;
 
 // What follows is an alternate definition of the same concept.
 //

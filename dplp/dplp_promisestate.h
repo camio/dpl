@@ -4,26 +4,27 @@
 #include <dplp_promisestateimp.h>
 #include <dplp_promisestateimputil.h>
 
-#include <utility> // std::move
+#include <utility>  // std::move
 
 namespace dplp {
 
-template <typename... Types> class PromiseState {
-  // TODO: document that the default state is a waiting state.
-  // TODO: document that this class is thread safe.
+template <typename... Types>
+class PromiseState {
+    // TODO: document that the default state is a waiting state.
+    // TODO: document that this class is thread safe.
 
-  PromiseStateImp<Types...> d_imp;
+    PromiseStateImp<Types...> d_imp;
 
-public:
-  // TODO: make this a forwarding argument
-  void fulfill(Types... fulfillValues);
+  public:
+    // TODO: make this a forwarding argument
+    void fulfill(Types... fulfillValues);
 
-  void reject(std::exception_ptr error);
+    void reject(std::exception_ptr error);
 
-  // TODO: make this a forwarding argument
-  template <typename FulfilledCont, typename RejectedCont>
-  void postContinuations(FulfilledCont fulfilledCont,
-                         RejectedCont rejectedCont);
+    // TODO: make this a forwarding argument
+    template <typename FulfilledCont, typename RejectedCont>
+    void postContinuations(FulfilledCont fulfilledCont,
+                           RejectedCont  rejectedCont);
 };
 
 // ============================================================================
@@ -31,21 +32,24 @@ public:
 // ============================================================================
 
 template <typename... Types>
-void PromiseState<Types...>::fulfill(Types... fulfillValues) {
-  dplp::PromiseStateImpUtil::fulfill(&d_imp, fulfillValues...);
+void PromiseState<Types...>::fulfill(Types... fulfillValues)
+{
+    dplp::PromiseStateImpUtil::fulfill(&d_imp, fulfillValues...);
 }
 
 template <typename... Types>
-void PromiseState<Types...>::reject(std::exception_ptr error) {
-  dplp::PromiseStateImpUtil::reject(&d_imp, std::move(error));
+void PromiseState<Types...>::reject(std::exception_ptr error)
+{
+    dplp::PromiseStateImpUtil::reject(&d_imp, std::move(error));
 }
 
 template <typename... Types>
 template <typename FulfilledCont, typename RejectedCont>
 void PromiseState<Types...>::postContinuations(FulfilledCont fulfilledCont,
-                                               RejectedCont rejectedCont) {
-  dplp::PromiseStateImpUtil::postContinuations(&d_imp, fulfilledCont,
-                                               rejectedCont);
+                                               RejectedCont  rejectedCont)
+{
+    dplp::PromiseStateImpUtil::postContinuations(
+        &d_imp, fulfilledCont, rejectedCont);
 }
 }
 #endif

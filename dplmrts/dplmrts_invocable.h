@@ -52,13 +52,14 @@
 // Note that we're using `is_same_v` and `result_of_t` to verify that the
 // result of `F` has type `int`.
 
-#include <functional> // std::invoke
+#include <functional>  // std::invoke
 
 namespace dplmrts {
 
 template <typename F, typename... Types>
-concept bool Invocable = requires(F f, Types... t) {
-  std::invoke(f, t...);
+concept bool Invocable = requires(F f, Types... t)
+{
+    std::invoke(f, t...);
 };
 // This concept is satisified by types that meet the requirements of
 // `std::invoke`.

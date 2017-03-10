@@ -43,11 +43,12 @@
 #include <dplmrts_invocable.h>
 
 namespace dplmrts {
-template <typename... Types> struct InvocableArchetype {
-  // 'InvocableArchetype<Types...>' is a type that satisifies
-  // 'dplmrts::Invocable<Types...>'.
+template <typename... Types>
+struct InvocableArchetype {
+    // 'InvocableArchetype<Types...>' is a type that satisifies
+    // 'dplmrts::Invocable<Types...>'.
 
-  void operator()(Types...) const {}
+    void operator()(Types...) const {}
 };
 }
 

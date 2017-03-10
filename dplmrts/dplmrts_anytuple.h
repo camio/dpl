@@ -42,7 +42,6 @@ namespace dplmrts {
 template <typename T>
 concept bool AnyTuple = requires(T t){{t}->std::tuple<auto...>};
 // This concept is satisified by `std::tuple` template instantiations.
-
 }
 
 #endif
