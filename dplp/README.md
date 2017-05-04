@@ -81,7 +81,7 @@ dependency.
 ## Component Synopsis
 
 * `dplp_anypromise`. Provide a concept that is satisfied by promise types.
-* `dplp_promise`.
+* `dplp_promise`. Provide a template representing asynchronous values.
 * `dplp_promisestate`.
 * `dplp_promisestateimp`.
 * `dplp_promisestateimputil`.
