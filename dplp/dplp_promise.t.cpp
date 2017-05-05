@@ -123,7 +123,7 @@ TEST(dplp_promise, then_one_arg)
 
 TEST(dplp_promise, fulfill)
 {
-    dplp::Promise<int, double> p = dplp::Promise<>::fulfill(3, 2.5);
+    dplp::Promise<int, double> p = dplp::makeFulfilledPromise(3, 2.5);
 
     bool fulfilled = false;
     p.then([&fulfilled](int i, double d) {
@@ -139,7 +139,7 @@ TEST(dplp_promise, reject)
     std::exception_ptr error =
         std::make_exception_ptr(std::runtime_error("test"));
 
-    dplp::Promise<int, double> p = dplp::Promise<>::reject<int, double>(error);
+    dplp::Promise<int, double> p = dplp::makeRejectedPromise<int, double>(error);
 
     bool rejected = false;
     p.then([](int i, double d) { ADD_FAILURE() << "Unexpected fulfillment."; },
@@ -152,11 +152,11 @@ TEST(dplp_promise, reject)
 
 TEST(dplp_promise, then_promise_promise)
 {
-    dplp::Promise<> p = dplp::Promise<>::fulfill();
+    dplp::Promise<> p = dplp::makeFulfilledPromise();
 
     {
         dplp::Promise<int> p2 =
-            p.then([] { return dplp::Promise<>::fulfill(3); });
+            p.then([] { return dplp::makeFulfilledPromise(3); });
 
         bool fulfilled = false;
         p2.then([&fulfilled](int i) {
@@ -168,8 +168,8 @@ TEST(dplp_promise, then_promise_promise)
 
     {
         dplp::Promise<int> p2 = p.then(
-                                    [] { return dplp::Promise<>::fulfill(4); },
-            [](std::exception_ptr e) { return dplp::Promise<>::fulfill(2); });
+                                    [] { return dplp::makeFulfilledPromise(4); },
+            [](std::exception_ptr e) { return dplp::makeFulfilledPromise(2); });
 
         bool fulfilled = false;
         p2.then([&fulfilled](int i) {
@@ -182,7 +182,7 @@ TEST(dplp_promise, then_promise_promise)
 
 TEST(dplp_promise, then_tuple)
 {
-    dplp::Promise<> p = dplp::Promise<>::fulfill();
+    dplp::Promise<> p = dplp::makeFulfilledPromise();
 
     {
         dplp::Promise<int, std::string> p2 =
@@ -226,7 +226,7 @@ TEST(dplp_promise, invoke)
     // do this by providing member functions which do not work with the normal
     // call syntax.
 
-    dplp::Promise<C> p = dplp::Promise<>::fulfill(C());
+    dplp::Promise<C> p = dplp::makeFulfilledPromise(C());
 
     bool fulfilled = false;
 

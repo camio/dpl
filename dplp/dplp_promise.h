@@ -6,6 +6,10 @@
 //@CLASSES:
 //  dplp::Promise: an asynchronous value template
 //
+//@FUNCTIONS:
+//  dplp::makeFulfilledPromise: create a fulfilled promise
+//  dplp::makeRejectedPromise: create a rejected promise
+//
 //@DESCRIPTION: This component provides a single class, 'dplp::Promise', that
 // represents asynchronous values. An asynchronous value is a value that may be
 // resolved (aka. set) by another thread or operation. The value can only be
@@ -341,24 +345,24 @@
 //..
 //  dplp::Promise<>([](auto fulfill, auto reject) { fulfill(); });
 //..
-// , in the above example is a common one. `dplp::Promise` has a `fulfill`
-// static function that is a shorthand for this.
+// , in the above example is a common one. There is a shortand,
+// `makeFulfilledPromise` that can be used instead for this.
 //..
-//  dplp::Promise<>::fulfill();
+//  dplp::makeFulfilledPromise();
 //..
 // This returns a fulfilled empty promise. You can use more arguments to
-// 'fulfill' for creating non-empty promises.
+// 'makeFulfilledPromise' for creating non-empty promises.
 //..
 //  dplp::promise<int, std::string> foo
-//    = dplp::Promise<>::fulfill(3, std::string("hello"));
+//    = dplp::makeFulfilledPromise(3, std::string("hello"));
 //..
-// Note that because 'fufill' deduces its return type from its arguments,
-// '"string"' could not have been used here because a 'char*' would have been
-// deduced as its type.
+// Note that because 'makeFulfilledPromise' deduces its return type from its
+// arguments, '"string"' could not have been used here because a 'char*' would
+// have been deduced as its type.
 //
-// Although not used much oustide of testing, the analog of 'fulfill'
-// ('reject') is also provided. Unlike 'fulfill', the template arguments of
-// 'promise' must be provided for the 'reject' function.
+// Although not used much oustide of testing, the analog of
+// 'makeFulfilledPromise' ('makeRejectedPromise') is also provided. Unlike
+// 'makeFulfilledPromise', the template arguments must be supplied.
 
 #include <dplmrts_anytuple.h>
 #include <dplmrts_invocable.h>
@@ -539,13 +543,14 @@ class Promise {
         //    of 'fulfilledCont' is 'T', then the result of this function will
         //    be of type 'Promise<T>'.
 
-    template <typename...                   Types2>
-    static Promise<std::decay_t<Types2>...> fulfill(Types2&&... values);
+    template <typename... Types2>
+    friend Promise<std::decay_t<Types2>...>
+    makeFulfilledPromise(Types2&&... values);
         // Return a promise with the specified types that is fulfilled with the
         // specified 'values'.
 
     template <typename...     Types2>
-    static Promise<Types2...> reject(std::exception_ptr error);
+    friend Promise<Types2...> makeRejectedPromise(std::exception_ptr error);
         // Return a promise with the specified types that is rejected with the
         // specified 'error'.
 
@@ -887,27 +892,25 @@ template <typename... Types>
 }
 
 template <typename... Types>
-template <typename...            Types2>
-Promise<std::decay_t<Types2>...> Promise<Types...>::fulfill(Types2&&... values)
-{
-    Promise<std::decay_t<Types2>...> result;
-    result.d_data_sp->fulfill(std::forward<Types2>(values)...);
-    return result;
-}
-
-template <typename... Types>
-template <typename... Types2>
-Promise<Types2...> Promise<Types...>::reject(std::exception_ptr error)
-{
-    Promise<Types2...> result;
-    result.d_data_sp->reject(std::move(error));
-    return result;
-}
-
-template <typename... Types>
 Promise<Types...>::Promise()
 : d_data_sp(std::make_shared<PromiseState<Types...> >())
 {
+}
+
+template <typename...           Types>
+Promise<std::decay_t<Types>...> makeFulfilledPromise(Types&&... values)
+{
+    Promise<std::decay_t<Types>...> result;
+    result.d_data_sp->fulfill(std::forward<Types>(values)...);
+    return result;
+}
+
+template <typename... Types>
+Promise<Types...> makeRejectedPromise(std::exception_ptr error)
+{
+    Promise<Types...> result;
+    result.d_data_sp->reject(std::move(error));
+    return result;
 }
 }
 

@@ -95,9 +95,6 @@ dependency.
 
 ## TODO
 
-### Priority 1
-- Create 'makeFulfilledPromise' and 'makeRejectedPromise' free functions.
-
 ### Priority 2
 - Add unit tests to verify that callables with move-only call operators are
   supported as continuation functions and resolvers.
