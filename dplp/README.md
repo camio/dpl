@@ -80,19 +80,24 @@ dependency.
 
 ## Component Synopsis
 
-* `dplp_anypromise`. Provide a concept that is satisfied by promise types.
-* `dplp_promise`. Provide a template representing asynchronous values.
+* `dplp_anypromise`.
+    Provide a concept that is satisfied by promise types.
+* `dplp_promise`.
+    Provide a template representing asynchronous values.
 * `dplp_promisestate`.
+    Provide a low-level promise with only fundamental operations.
 * `dplp_promisestateimp`.
+    Provide datatypes for representing promise state.
 * `dplp_promisestateimputil`.
-* `dplp_resolver`. Provide a concept that is satisfied by promise resolver
-  functions.
+    Provide utility functions for 'dplp::PromiseStateImp' objects.
+* `dplp_resolver`.
+    Provide a concept that is satisfied by promise resolver functions.
 
 ## TODO
 
 ### Priority 1
-- Complete documentation for all components.
 - Consider how to properly handle cv qualifiers in continuation return types.
+- Create 'makeFulfilledPromise' and 'makeRejectedPromise' free functions.
 
 ### Priority 2
 - Add unit tests to verify that callables with move-only call operators are

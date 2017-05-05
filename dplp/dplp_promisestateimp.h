@@ -1,6 +1,27 @@
 #ifndef INCLUDED_DPLP_PROMISESTATEIMP
 #define INCLUDED_DPLP_PROMISESTATEIMP
 
+//@PURPOSE: Provide datatypes for representing promise state.
+//
+//@CLASSES:
+//  dplp::PromiseStateImp: general promise state
+//  dplp::PromiseStateImpFulfilled: fulfilled promise datatype
+//  dplp::PromiseStateImpRejected: rejected promise datatype
+//  dplp::PromiseStateImpWaiting: waiting promise datatype
+//
+//@SEE_ALSO: dplp_promisestateimputil
+//
+//@DESCRIPTION: This component provides several low-level datatypes that
+// represent the internal state for promise datatypes. The principle type is
+// 'dplp::PromiseStateImp' which is a variant over the three promise states
+// which are represented by 'dplp::PromiseStateImpFulfilled',
+// 'dplp::PromiseStateImpRejected', and 'dplp::PromiseStateImpWaiting'.
+//
+// 'dplp::PromiseStateImp' also contains a 'std::mutex' which is intended to
+// protect its other data member. Use of this mutex is not enforced in any way.
+// The expectation is that higher-level components will insulate the user from
+// incorect mutex usage.
+
 #include <dplm17_variant.h>
 
 #include <exception>   // std::exception_ptr
