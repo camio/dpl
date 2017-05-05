@@ -96,7 +96,6 @@ dependency.
 ## TODO
 
 ### Priority 1
-- Consider how to properly handle cv qualifiers in continuation return types.
 - Create 'makeFulfilledPromise' and 'makeRejectedPromise' free functions.
 
 ### Priority 2
