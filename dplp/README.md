@@ -100,18 +100,14 @@ dependency.
   supported as continuation functions and resolvers.
 - clean up the test cases now that we have 'fulfilled' and 'rejected' static
   functions.
-- Consider whether or not all function arguments should be passed by && and
-  'std::forward' should be used.
-- Consider what happens when the 'fufil' and 'reject' functions passed to the
-  resolver throw an exception. We need to properly support this.
+- Figure out how to 'std::forward' into a lambda and use it in the 'then'
+  functions.
 - Make the 'fulfil' and 'reject' functions which are passed to the 'resolver'
   in the 'Promise' constructor release their reference to 'd_data' when one of
   the two is called. The only way that I can think of doing this is to make a
   `shared_ptr<shared_ptr<data>>` object that both of those functions reference.
   At the first call, the "inner" shared pointer is made null. Unit tests
   should be created for this.
-- Make the 'then' functions 'const' since they don't change the semantic value
-  of a promise.
 - Carefully go over unit tests to be sure all branches are being tested.
 
 ### Priority 3
