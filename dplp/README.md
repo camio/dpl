@@ -93,6 +93,12 @@ dependency.
 * `dplp_resolver`.
     Provide a concept that is satisfied by promise resolver functions.
 
+## License
+
+Most of this code is licensed under the Apache License, but there is third
+party code also incorporated that has its own license. See the dplm17 and
+dplm20 packages for more details.
+
 ## TODO
 
 ### Priority 2
