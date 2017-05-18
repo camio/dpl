@@ -20,8 +20,8 @@ add_library(dplp
   dplp_promisestateimp.cpp
   dplp_promisestateimputil.h
   dplp_promisestateimputil.cpp
-  dplp_resolver.h
-  dplp_resolver.cpp
+#   dplp_resolver.h
+#   dplp_resolver.cpp
 )
 target_include_directories(dplp PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 target_link_libraries(dplp PUBLIC
@@ -38,9 +38,9 @@ add_executable(dplp_promise.t dplp_promise.t.cpp)
 target_link_libraries(dplp_promise.t dplp dplm17 GTest::GTest)
 add_test(NAME dplp_promise.t COMMAND dplp_promise.t)
 
-add_executable(dplp_resolver.t dplp_resolver.t.cpp)
-target_link_libraries(dplp_resolver.t dplp GTest::GTest)
-add_test(NAME dplp_resolver.t COMMAND dplp_resolver.t)
+# add_executable(dplp_resolver.t dplp_resolver.t.cpp)
+# target_link_libraries(dplp_resolver.t dplp GTest::GTest)
+# add_test(NAME dplp_resolver.t COMMAND dplp_resolver.t)
 
 # ----------------------------------------------------------------------------
 # Copyright 2017 Bloomberg Finance L.P.

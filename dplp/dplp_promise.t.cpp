@@ -5,6 +5,73 @@
 
 #include <string>
 
+template <typename... Types>
+struct promise2 {
+    // Two-argument version of case #1
+    template <
+        typename FulfilledCont,
+        typename RejectedCont,
+        std::enable_if_t<
+            // void return type
+            std::is_void<std::result_of_t<FulfilledCont(Types...)> >::value &&
+                // 'fulfilledCont' and 'rejectedCont' have matching
+                // return values
+                std::is_same<std::result_of_t<FulfilledCont(Types...)>,
+                             std::result_of_t<
+                                 RejectedCont(std::exception_ptr)> >::value,
+            int> = 0>
+    int myThen(FulfilledCont fulfilledCont, RejectedCont rejectedCont) const
+    {
+        return 0;
+    }
+
+    // One-argument version of case #1
+    template <
+        typename FulfilledCont,
+        std::enable_if_t<
+            // void return type
+            std::is_void<std::result_of_t<FulfilledCont(Types...)> >::value,
+            int> = 0>
+    int myThen(
+         FulfilledCont fulfilledCont) const  // One-argument version of case #1
+    {
+        return 1;
+    }
+
+    template <
+        typename FulfilledCont,
+        typename RejectedCont,
+        std::enable_if_t<
+            // tuple return type
+            dplmrts::is_tuple_v<std::result_of_t<FulfilledCont(Types...)> > &&
+                // 'fulfilledCont' and 'rejectedCont' have matching return
+                // values
+                std::experimental::is_same_v<
+                    std::result_of_t<FulfilledCont(Types...)>,
+                    std::result_of_t<RejectedCont(std::exception_ptr)> >,
+            int> = 0>
+    int
+    myThen(FulfilledCont fulfilledCont,
+           RejectedCont rejectedCont) const  // Two-argument version of case #2
+    {
+        return 2;
+    }
+};
+
+TEST(dplp_promise, experiments)
+{
+    ASSERT_EQ(0,
+              promise2<int>().myThen([](int i) {},
+                                     [](const std::exception_ptr&) {}));
+    ASSERT_EQ(1, promise2<int>().myThen([](int i) {}));
+
+    ASSERT_EQ(
+        2,
+        promise2<int>().myThen(
+            [](int i) { return std::make_tuple(1, 2); },
+            [](const std::exception_ptr&) { return std::make_tuple(1, 2); }));
+}
+
 TEST(dplp_promise, basic)
 {
     dplp::Promise<int> p([](auto fulfill, auto reject) { fulfill(3); });
@@ -139,7 +206,8 @@ TEST(dplp_promise, reject)
     std::exception_ptr error =
         std::make_exception_ptr(std::runtime_error("test"));
 
-    dplp::Promise<int, double> p = dplp::makeRejectedPromise<int, double>(error);
+    dplp::Promise<int, double> p =
+        dplp::makeRejectedPromise<int, double>(error);
 
     bool rejected = false;
     p.then([](int i, double d) { ADD_FAILURE() << "Unexpected fulfillment."; },
@@ -167,9 +235,11 @@ TEST(dplp_promise, then_promise_promise)
     }
 
     {
-        dplp::Promise<int> p2 = p.then(
-                                    [] { return dplp::makeFulfilledPromise(4); },
-            [](std::exception_ptr e) { return dplp::makeFulfilledPromise(2); });
+        dplp::Promise<int> p2 =
+            p.then([] { return dplp::makeFulfilledPromise(4); },
+                   [](std::exception_ptr e) {
+                       return dplp::makeFulfilledPromise(2);
+                   });
 
         bool fulfilled = false;
         p2.then([&fulfilled](int i) {

@@ -39,10 +39,22 @@
 
 namespace dplmrts {
 
+//template <typename T>
+//concept bool AnyTuple =
+//    // This concept is satisified by `std::tuple` template instantiations.
+//    requires(T t){{t}->std::tuple<auto...>};
+
+//TODO: get the right include for 'std::false_type' and 'std::true_type'
 template <typename T>
-concept bool AnyTuple =
-    // This concept is satisified by `std::tuple` template instantiations.
-    requires(T t){{t}->std::tuple<auto...>};
+struct is_tuple : std::false_type {
+};
+
+template <typename... T>
+struct is_tuple<std::tuple<T...> > : std::true_type {
+};
+
+template <class T>
+constexpr bool is_tuple_v = is_tuple<T>::value;
 }
 
 #endif

@@ -37,14 +37,28 @@
 //  int f(C c);
 //..
 
+//TODO: verify whether or not this is correct
+#include <type_traits> // std::true_type, std::false_type
+
 namespace dplp {
 template <typename... Types>
 class Promise;
 
+//template <typename T>
+//concept bool AnyPromise =
+//    // This concept is satisified by `dplp::Promise` template instantiations.
+//    requires(T t){{t}->Promise<auto...>};
+
 template <typename T>
-concept bool AnyPromise =
-    // This concept is satisified by `dplp::Promise` template instantiations.
-    requires(T t){{t}->Promise<auto...>};
+struct IsPromise : std::false_type {
+};
+
+template <typename... T>
+struct IsPromise<Promise<T...> > : std::true_type {
+};
+
+template <class T>
+constexpr bool isPromise = IsPromise<T>::value;
 }
 
 #endif
