@@ -166,4 +166,4 @@ dplm20 packages for more details.
 - [Concepts TS (N4361)](http://open-std.org/JTC1/SC22/WG21/docs/papers/2015/n4361.pdf)
 - [Ranges TS (N4569)](http://open-std.org/JTC1/SC22/WG21/docs/papers/2016/n4569.pdf)
 - [Google Closure Promises](https://github.com/google/closure-library/blob/master/closure/goog/promise/promise.js)
-- [Promises/A+ JavaScript Promise Standard](http://open-std.org/JTC1/SC22/WG21/docs/papers/2016/n4569.pdf)
+- [Promises/A+ JavaScript Promise Standard](https://promisesaplus.com/)
