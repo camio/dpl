@@ -80,7 +80,7 @@
 // 'myFulfill' and 'myReject' can be called from any thread at any time.
 //
 ///Example 2: Wrapping an Asynchronous Function
-///- - - - - - - - - - - - - - - - - - - - - -
+/// - - - - - - - - - - - - - - - - - - - - - -
 // Frequently preexisting libraries present an asynchronous interface where
 // callbacks are installed and later called when a particular task is
 // accomplished. Consider the following two functions:
@@ -135,11 +135,11 @@
 //  }
 //..
 // There are two lambdas in this example. The outer lambda is the resolver for
-// the promise, which calls the wrapped function. The pattern of calling
-// the wrapped function from within the resolver is common. The inner lambda is
-// the callback for the wrapped function. Note that the callback captures
-// 'resolve' and 'reject' so they can be called once the wrapped function
-// completes its asynchronous operation.
+// the promise, which calls the wrapped function. The pattern of calling the
+// wrapped function from within the resolver is common. The inner lambda is the
+// callback for the wrapped function. Note that the callback captures 'resolve'
+// and 'reject' so they can be called once the wrapped function completes its
+// asynchronous operation.
 //
 // 'sendMessageP' is implemented in a similar way.
 //..
@@ -193,9 +193,8 @@
 // The second notable point is what happens when the fulfilled continuation
 // throws an exception. A runtime exception can occur if there are trailing
 // characters after the 'int' and 'std::stoi' itself can throw several
-// exceptions if there's invalid input. If any of these cases, the
-// resulting int promise is rejected with precisely the exception that was
-// thrown.
+// exceptions if there's invalid input. If any of these cases, the resulting
+// int promise is rejected with precisely the exception that was thrown.
 //
 // Finally, it is important to note what happens if 'receiveMessageP''s result
 // is rejected. When that is the case, the fulfilled continuation is never
@@ -203,7 +202,7 @@
 // that 'receiveMessageP''s result was rejected with.
 //
 ///Example 4: Chaining promises
-///- - - - - - - - - - - - - -
+/// - - - - - - - - - - - - - -
 // 'then' doesn't always return a 'dplp::Promise<T>' when the fulfilled
 // continuation returns a 'T'. When the fulfilled continuation returns a
 // promise there is special behavior.
@@ -258,7 +257,7 @@
 // further operations.
 //
 ///Example 6: 'tuple'-returning continuations
-///- - - - - - - - - - - - - - - - - - - - -
+/// - - - - - - - - - - - - - - - - - - - - -
 // A 'std::tuple' continuation return type is also specially handled. These
 // produce promises that contain multiple values. Consider the following
 // snippet which produces a 'dplp::Promise<std::string, int>'
@@ -284,7 +283,7 @@
 //..
 //
 ///Example 7: Handling Errors
-///- - - - - - - - - - - - -
+/// - - - - - - - - - - - - -
 // As in life, one must account for broken (rejected) promises. The 'then'
 // function's optional second argument is there for this purpose.
 //..
@@ -394,6 +393,43 @@ using Promise_TupleContinuationThenResult =
     // that match the element types of the tuple.
     typename Promise_TupleContinuationThenResultImp<T>::type;
 
+template <typename T, typename... Types>
+concept bool Promise_FulfilledCont = dplmrts::Invocable<T, Types...>;
+
+template <typename T, typename... Types>
+concept bool Promise_RejectedCont = dplmrts::Invocable<T, std::exception_ptr>;
+
+template <typename T, typename U, typename... Types>
+concept bool                             Promise_Conts =
+    Promise_FulfilledCont<T, Types...>&& Promise_RejectedCont<U, Types...>&&
+                                         std::experimental::is_same_v<std::result_of_t<T(Types...)>,
+                                     std::result_of_t<U(std::exception_ptr)> >;
+
+template <typename T, typename... Types>
+concept bool VoidPromise_FulfilledCont = Promise_FulfilledCont<T, Types...>&&
+             std::experimental::is_void_v<std::result_of_t<T(Types...)> >;
+
+template <typename T, typename U, typename... Types>
+concept bool                        Promise_VoidConts =
+    Promise_Conts<T, U, Types...>&& VoidPromise_FulfilledCont<T, Types...>;
+
+template <typename T, typename... Types>
+concept bool TuplePromise_FulfilledCont = Promise_FulfilledCont<T, Types...>&&
+             dplmrts::AnyTuple<std::result_of_t<T(Types...)> >;
+
+template <typename T, typename U, typename... Types>
+concept bool                        Promise_TupleConts =
+    Promise_Conts<T, U, Types...>&& TuplePromise_FulfilledCont<T, Types...>;
+
+template <typename T, typename... Types>
+concept bool Promise_PromiseFulfilledCont =
+    Promise_FulfilledCont<T, Types...>&&
+        dplp::AnyPromise<std::result_of_t<T(Types...)> >;
+
+template <typename T, typename U, typename... Types>
+concept bool                        Promise_PromiseConts =
+    Promise_Conts<T, U, Types...>&& Promise_PromiseFulfilledCont<T, Types...>;
+
 template <typename... Types>
 class Promise {
     // This class implements a value semantic type representing a heterogenius
@@ -424,95 +460,56 @@ class Promise {
         // from within 'resolver'. 'resolver' could, for example, store these
         // functions elsewhere to be called at a later time.
 
-    template <dplmrts::Invocable<Types...>           FulfilledCont,
-              dplmrts::Invocable<std::exception_ptr> RejectedCont>
-    Promise<>
-    then(FulfilledCont fulfilledCont,
-         RejectedCont  rejectedCont) const  // Two-argument version of case #1
-        requires
-        // void return type
-        std::experimental::is_void_v<
-            std::result_of_t<FulfilledCont(Types...)> >&&
-
-        // 'fulfilledCont' and 'rejectedCont' have matching return values
-        std::experimental::is_same_v<
-            std::result_of_t<FulfilledCont(Types...)>,
-            std::result_of_t<RejectedCont(std::exception_ptr)> >;
-    template <dplmrts::Invocable<Types...> FulfilledCont>
-    Promise<>
-    then(FulfilledCont fulfilledCont) const  // One-argument version of case #1
-        requires
-        // void return type
-        std::experimental::is_void_v<
-            std::result_of_t<FulfilledCont(Types...)> >;
-    template <dplmrts::Invocable<Types...>           FulfilledCont,
-              dplmrts::Invocable<std::exception_ptr> RejectedCont>
-    Promise_TupleContinuationThenResult<
-        std::result_of_t<FulfilledCont(Types...)> >
-    then(FulfilledCont fulfilledCont,
-         RejectedCont  rejectedCont) const  // Two-argument version of case #2
-        requires
-        // tuple return type
-        dplmrts::AnyTuple<std::result_of_t<FulfilledCont(Types...)> >&&
-        // 'fulfilledCont' and 'rejectedCont' have matching return values
-        std::experimental::is_same_v<
-            std::result_of_t<FulfilledCont(Types...)>,
-            std::result_of_t<RejectedCont(std::exception_ptr)> >;
-    template <dplmrts::Invocable<Types...> FulfilledCont>
-    Promise_TupleContinuationThenResult<
-        std::result_of_t<FulfilledCont(Types...)> >
-    then(FulfilledCont fulfilledCont) const  // One-argument version of case #2
-        requires
-        // tuple return type
-        dplmrts::AnyTuple<std::result_of_t<FulfilledCont(Types...)> >;
-    template <dplmrts::Invocable<Types...>           FulfilledCont,
-              dplmrts::Invocable<std::exception_ptr> RejectedCont>
-    std::result_of_t<FulfilledCont(Types...)>
-    then(FulfilledCont fulfilledCont,
-         RejectedCont  rejectedCont) const  // Two-argument version of case #3
-        requires
-        // promise return type
-        dplp::AnyPromise<std::result_of_t<FulfilledCont(Types...)> >&&
-        // 'fulfilledCont' and 'rejectedCont' have matching return values
-        std::experimental::is_same_v<
-            std::result_of_t<FulfilledCont(Types...)>,
-            std::result_of_t<RejectedCont(std::exception_ptr)> >;
-    template <dplmrts::Invocable<Types...> FulfilledCont>
-    std::result_of_t<FulfilledCont(Types...)>
-    then(FulfilledCont fulfilledCont) const  // One-argument version of case #3
-        requires
-        // promise return type
-        dplp::AnyPromise<std::result_of_t<FulfilledCont(Types...)> >;
-    template <dplmrts::Invocable<Types...>           FulfilledCont,
-              dplmrts::Invocable<std::exception_ptr> RejectedCont>
-        Promise<std::result_of_t<FulfilledCont(Types...)> >
-        then(FulfilledCont fulfilledCont,
-             RejectedCont  rejectedCont)
-            const  // Two-argument version of case #4
-        requires
-        // non-void return type
-        !std::experimental::is_void_v<
-            std::result_of_t<FulfilledCont(Types...)> > &&
-        // non-tuple return type
-        !dplmrts::AnyTuple<std::result_of_t<FulfilledCont(Types...)> > &&
-        // non-promise return type
-        !dplp::AnyPromise<std::result_of_t<FulfilledCont(Types...)> > &&
-        // 'fulfilledCont' and 'rejectedCont' have matching return values
-        std::experimental::is_same_v<
-            std::result_of_t<FulfilledCont(Types...)>,
-            std::result_of_t<RejectedCont(std::exception_ptr)> >;
-    template <dplmrts::Invocable<Types...> FulfilledCont>
-        Promise<std::result_of_t<FulfilledCont(Types...)> >
-        then(FulfilledCont fulfilledCont)
-            const  // One-argument version of case #4
-        requires
-        // non-void return type
-        !std::experimental::is_void_v<
-            std::result_of_t<FulfilledCont(Types...)> > &&
-        // non-tuple return type
-        !dplmrts::AnyTuple<std::result_of_t<FulfilledCont(Types...)> > &&
-        // non-promise return type
-        !dplp::AnyPromise<std::result_of_t<FulfilledCont(Types...)> >;
+    template <typename Promise_FulfilledCont, typename Promise_RejectedCont>
+    requires Promise_VoidConts<Promise_FulfilledCont,
+                               Promise_RejectedCont,
+                               Types...>
+        Promise<> then(Promise_FulfilledCont fulfilledCont,
+                       Promise_RejectedCont  rejectedCont)
+            const;  // Two-argument version of case #1
+    template <typename Promise_FulfilledCont>
+    requires VoidPromise_FulfilledCont<Promise_FulfilledCont, Types...>
+        Promise<> then(Promise_FulfilledCont fulfilledCont)
+            const;  // One-argument version of case #1
+    template <typename Promise_FulfilledCont, typename Promise_RejectedCont>
+    requires Promise_TupleConts<Promise_FulfilledCont,
+                                Promise_RejectedCont,
+                                Types...> auto
+    then(Promise_FulfilledCont fulfilledCont,
+         Promise_RejectedCont  rejectedCont) const
+        -> Promise_TupleContinuationThenResult<
+            std::result_of_t<Promise_FulfilledCont(
+                Types...)> >;  // Two-argument version of case #2
+    template <typename Promise_FulfilledCont>
+    requires TuplePromise_FulfilledCont<Promise_FulfilledCont, Types...> auto
+    then(Promise_FulfilledCont fulfilledCont) const
+        -> Promise_TupleContinuationThenResult<
+            std::result_of_t<Promise_FulfilledCont(
+                Types...)> >;  // One-argument version of case #2
+    template <typename Promise_FulfilledCont, typename Promise_RejectedCont>
+    requires Promise_PromiseConts<Promise_FulfilledCont,
+                                  Promise_RejectedCont,
+                                  Types...> auto
+    then(Promise_FulfilledCont fulfilledCont,
+         Promise_RejectedCont  rejectedCont) const
+        -> std::result_of_t<Promise_FulfilledCont(
+            Types...)>;  // Two-argument version of case #3
+    template <typename Promise_FulfilledCont>
+    requires Promise_PromiseFulfilledCont<Promise_FulfilledCont, Types...> auto
+    then(Promise_FulfilledCont fulfilledCont) const -> std::result_of_t<
+        Promise_FulfilledCont(Types...)>;  // One-argument version of case #3
+    template <typename Promise_FulfilledCont, typename Promise_RejectedCont>
+    requires Promise_Conts<Promise_FulfilledCont,
+                           Promise_RejectedCont,
+                           Types...> auto
+    then(Promise_FulfilledCont fulfilledCont,
+         Promise_RejectedCont  rejectedCont) const
+        -> Promise<std::result_of_t<Promise_FulfilledCont(
+            Types...)> >;  // Two-argument version of case #4
+    template <typename FC>
+    requires Promise_FulfilledCont<FC, Types...> auto
+    then(FC fulfilledCont) const -> Promise<
+        std::result_of_t<FC(Types...)> >;  // One-argument version of case #4
         // Return a new promise that, upon the fulfilment of this promise, will
         // be fulfilled with the result of the specified 'fulfilledCont'
         // function or, upon reject of this promise, will be rejected with the
@@ -544,12 +541,12 @@ class Promise {
         //    be of type 'Promise<T>'.
 
     template <typename... Types2>
-    friend Promise<std::decay_t<Types2>...>
-    makeFulfilledPromise(Types2&&... values);
+    friend Promise<std::decay_t<Types2>...> makeFulfilledPromise(
+                                                           Types2&&... values);
         // Return a promise with the specified types that is fulfilled with the
         // specified 'values'.
 
-    template <typename...     Types2>
+    template <typename... Types2>
     friend Promise<Types2...> makeRejectedPromise(std::exception_ptr error);
         // Return a promise with the specified types that is rejected with the
         // specified 'error'.
@@ -584,19 +581,12 @@ Promise<Types...>::Promise(dplp::Resolver<Types...> resolver)
 }
 
 template <typename... Types>
-template <dplmrts::Invocable<Types...>           FulfilledCont,
-          dplmrts::Invocable<std::exception_ptr> RejectedCont>
-Promise<>                                        Promise<Types...>::then(
-          FulfilledCont fulfilledCont,
-          RejectedCont  rejectedCont) const  // Two-argument version of case #1
-    requires
-    // void return type
-    std::experimental::is_void_v<std::result_of_t<FulfilledCont(Types...)> >&&
-
-    // 'fulfilledCont' and 'rejectedCont' have matching return values
-    std::experimental::is_same_v<
-        std::result_of_t<FulfilledCont(Types...)>,
-        std::result_of_t<RejectedCont(std::exception_ptr)> >
+template <typename Promise_FulfilledCont, typename Promise_RejectedCont>
+requires
+        Promise_VoidConts<Promise_FulfilledCont, Promise_RejectedCont, Types...>
+        Promise<>
+        Promise<Types...>::then(Promise_FulfilledCont fulfilledCont,
+                                Promise_RejectedCont  rejectedCont) const
 {
     return Promise<>([
         this,
@@ -628,12 +618,9 @@ Promise<>                                        Promise<Types...>::then(
 }
 
 template <typename... Types>
-template <dplmrts::Invocable<Types...> FulfilledCont>
-Promise<>                              Promise<Types...>::then(
-         FulfilledCont fulfilledCont) const  // One-argument version of case #1
-    requires
-    // void return type
-    std::experimental::is_void_v<std::result_of_t<FulfilledCont(Types...)> >
+template <typename Promise_FulfilledCont>
+requires VoidPromise_FulfilledCont<Promise_FulfilledCont, Types...> Promise<>
+Promise<Types...>::then(Promise_FulfilledCont fulfilledCont) const
 {
     return Promise<>([ this, fulfilledCont = std::move(fulfilledCont) ](
         auto fulfill, auto reject) mutable {
@@ -653,23 +640,17 @@ Promise<>                              Promise<Types...>::then(
 }
 
 template <typename... Types>
-template <dplmrts::Invocable<Types...>           FulfilledCont,
-          dplmrts::Invocable<std::exception_ptr> RejectedCont>
-Promise_TupleContinuationThenResult<std::result_of_t<FulfilledCont(Types...)> >
-Promise<Types...>::then(
-          FulfilledCont fulfilledCont,
-          RejectedCont  rejectedCont) const  // Two-argument version of case #2
-    requires
-    // tuple return type
-    dplmrts::AnyTuple<std::result_of_t<FulfilledCont(Types...)> >&&
-
-    // 'fulfilledCont' and 'rejectedCont' have matching return values
-    std::experimental::is_same_v<
-        std::result_of_t<FulfilledCont(Types...)>,
-        std::result_of_t<RejectedCont(std::exception_ptr)> >
+template <typename Promise_FulfilledCont, typename Promise_RejectedCont>
+requires Promise_TupleConts<Promise_FulfilledCont,
+                            Promise_RejectedCont,
+                            Types...> auto
+Promise<Types...>::then(Promise_FulfilledCont fulfilledCont,
+                        Promise_RejectedCont  rejectedCont) const
+    -> Promise_TupleContinuationThenResult<
+        std::result_of_t<Promise_FulfilledCont(Types...)> >
 {
     using Result = Promise_TupleContinuationThenResult<
-        std::result_of_t<FulfilledCont(Types...)> >;
+        std::result_of_t<Promise_FulfilledCont(Types...)> >;
 
     return Result([
         this,
@@ -701,16 +682,14 @@ Promise<Types...>::then(
 }
 
 template <typename... Types>
-template <dplmrts::Invocable<Types...> FulfilledCont>
-Promise_TupleContinuationThenResult<std::result_of_t<FulfilledCont(Types...)> >
-Promise<Types...>::then(
-         FulfilledCont fulfilledCont) const  // One-argument version of case #2
-    requires
-    // tuple return type
-    dplmrts::AnyTuple<std::result_of_t<FulfilledCont(Types...)> >
+template <typename Promise_FulfilledCont>
+requires TuplePromise_FulfilledCont<Promise_FulfilledCont, Types...> auto
+Promise<Types...>::then(Promise_FulfilledCont fulfilledCont) const
+    -> Promise_TupleContinuationThenResult<
+        std::result_of_t<Promise_FulfilledCont(Types...)> >
 {
     using Result = Promise_TupleContinuationThenResult<
-        std::result_of_t<FulfilledCont(Types...)> >;
+        std::result_of_t<Promise_FulfilledCont(Types...)> >;
 
     return Result([ this, fulfilledCont = std::move(fulfilledCont) ](
         auto fulfill, auto reject) mutable {
@@ -730,21 +709,15 @@ Promise<Types...>::then(
 }
 
 template <typename... Types>
-template <dplmrts::Invocable<Types...>           FulfilledCont,
-          dplmrts::Invocable<std::exception_ptr> RejectedCont>
-std::result_of_t<FulfilledCont(Types...)>        Promise<Types...>::then(
-    FulfilledCont fulfilledCont,
-    RejectedCont  rejectedCont) const  // Two-argument version of case #3
-    requires
-    // promise return type
-    dplp::AnyPromise<std::result_of_t<FulfilledCont(Types...)> >&&
-
-    // 'fulfilledCont' and 'rejectedCont' have matching return values
-    std::experimental::is_same_v<
-        std::result_of_t<FulfilledCont(Types...)>,
-        std::result_of_t<RejectedCont(std::exception_ptr)> >
+template <typename Promise_FulfilledCont, typename Promise_RejectedCont>
+requires Promise_PromiseConts<Promise_FulfilledCont,
+                              Promise_RejectedCont,
+                              Types...> auto
+Promise<Types...>::then(Promise_FulfilledCont fulfilledCont,
+                        Promise_RejectedCont  rejectedCont) const
+    -> std::result_of_t<Promise_FulfilledCont(Types...)>
 {
-    using Result = std::result_of_t<FulfilledCont(Types...)>;
+    using Result = std::result_of_t<Promise_FulfilledCont(Types...)>;
 
     return Result([
         this,
@@ -778,14 +751,12 @@ std::result_of_t<FulfilledCont(Types...)>        Promise<Types...>::then(
 }
 
 template <typename... Types>
-template <dplmrts::Invocable<Types...>    FulfilledCont>
-std::result_of_t<FulfilledCont(Types...)> Promise<Types...>::then(
-    FulfilledCont fulfilledCont) const  // One-argument version of case #3
-    requires
-    // promise return type
-    dplp::AnyPromise<std::result_of_t<FulfilledCont(Types...)> >
+template <typename Promise_FulfilledCont>
+requires Promise_PromiseFulfilledCont<Promise_FulfilledCont, Types...> auto
+Promise<Types...>::then(Promise_FulfilledCont fulfilledCont) const
+    -> std::result_of_t<Promise_FulfilledCont(Types...)>
 {
-    using Result = std::result_of_t<FulfilledCont(Types...)>;
+    using Result = std::result_of_t<Promise_FulfilledCont(Types...)>;
 
     return Result([ this, fulfilledCont = std::move(fulfilledCont) ](
         auto fulfill, auto reject) mutable {
@@ -806,29 +777,14 @@ std::result_of_t<FulfilledCont(Types...)> Promise<Types...>::then(
 }
 
 template <typename... Types>
-    template <dplmrts::Invocable<Types...>           FulfilledCont,
-              dplmrts::Invocable<std::exception_ptr> RejectedCont>
-    Promise<std::result_of_t<FulfilledCont(Types...)> >
-    Promise<Types...>::then(
-          FulfilledCont fulfilledCont,
-          RejectedCont  rejectedCont) const  // Two-argument version of case #4
-    requires
-    // non-void return type
-    !std::experimental::is_void_v<
-        std::result_of_t<FulfilledCont(Types...)> > &&
-
-    // non-tuple return type
-    !dplmrts::AnyTuple<std::result_of_t<FulfilledCont(Types...)> > &&
-
-    // non-promise return type
-    !dplp::AnyPromise<std::result_of_t<FulfilledCont(Types...)> > &&
-
-    // 'fulfilledCont' and 'rejectedCont' have matching return values
-    std::experimental::is_same_v<
-        std::result_of_t<FulfilledCont(Types...)>,
-        std::result_of_t<RejectedCont(std::exception_ptr)> >
+template <typename Promise_FulfilledCont, typename Promise_RejectedCont>
+requires
+    Promise_Conts<Promise_FulfilledCont, Promise_RejectedCont, Types...> auto
+    Promise<Types...>::then(Promise_FulfilledCont fulfilledCont,
+                            Promise_RejectedCont  rejectedCont) const
+    -> Promise<std::result_of_t<Promise_FulfilledCont(Types...)> >
 {
-    using U = std::result_of_t<FulfilledCont(Types...)>;
+    using U = std::result_of_t<Promise_FulfilledCont(Types...)>;
 
     return Promise<U>([
         this,
@@ -858,22 +814,11 @@ template <typename... Types>
 }
 
 template <typename... Types>
-    template <dplmrts::Invocable<Types...> FulfilledCont>
-    Promise<std::result_of_t<FulfilledCont(Types...)> >
-    Promise<Types...>::then(
-         FulfilledCont fulfilledCont) const  // One-argument version of case #4
-    requires
-    // non-void return type
-    !std::experimental::is_void_v<
-        std::result_of_t<FulfilledCont(Types...)> > &&
-
-    // non-tuple return type
-    !dplmrts::AnyTuple<std::result_of_t<FulfilledCont(Types...)> > &&
-
-    // non-promise return type
-    !dplp::AnyPromise<std::result_of_t<FulfilledCont(Types...)> >
+template <typename FC> requires Promise_FulfilledCont<FC, Types...> auto
+Promise<Types...>::then(
+            FC fulfilledCont) const -> Promise<std::result_of_t<FC(Types...)> >
 {
-    using U = std::result_of_t<FulfilledCont(Types...)>;
+    using U = std::result_of_t<FC(Types...)>;
 
     return Promise<U>([ this, fulfilledCont = std::move(fulfilledCont) ](
         auto fulfill, auto reject) mutable {
@@ -897,7 +842,7 @@ Promise<Types...>::Promise()
 {
 }
 
-template <typename...           Types>
+template <typename... Types>
 Promise<std::decay_t<Types>...> makeFulfilledPromise(Types&&... values)
 {
     Promise<std::decay_t<Types>...> result;
