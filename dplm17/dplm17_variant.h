@@ -44,6 +44,7 @@
 #include <string>
 #include <type_traits>
 #include <utility>
+#include <functional>
 
 #ifdef _MSC_VER
 #pragma warning(push)
